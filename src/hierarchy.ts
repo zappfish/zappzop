@@ -34,22 +34,37 @@ function buildTree(items: Array<HierarchyItem>): Hierarchy {
 
 const tree = buildTree(hierarchy.items)
 
-function buildIndividualTree(tree: Hierarchy, leaf: HierarchyItem) {
+const happyPaths = [
+  // zebrafish anatomical entity
+  //   anatomical structure
+  //     whole organism
+  //       organism subdivision
+  "ZFA:0100000-ZFA:0000037-ZFA:0001094-ZFA:0001308",
+
+  // zebrafish anatomical entity
+  //   anatomical structure
+  //     whole organism
+  //       anatomical system
+  "ZFA:0100000-ZFA:0000037-ZFA:0001094-ZFA:0001439",
+]
+
+function buildIndividualTree(
+  tree: Hierarchy,
+  leaf: HierarchyItem,
+  useHappyPaths: boolean,
+) {
   const includedURIs = new Set()
 
   const items: Array<{
     item: HierarchyItem,
+    relToParent: string,
     depth: number,
   }> = []
 
   function addItem(_item: HierarchyItem) {
     includedURIs.add(_item.uri)
 
-    for (const { uri, rel_label } of _item.parents) {
-      if (rel_label == "part of" && _item !== leaf) {
-         //continue;
-      }
-
+    for (const { uri } of _item.parents) {
       includedURIs.add(uri)
       const parentItem = tree.itemsByURI[uri]
       addItem(parentItem)
@@ -64,10 +79,16 @@ function buildIndividualTree(tree: Hierarchy, leaf: HierarchyItem) {
     tree: {
       root: tree.root,
       depth: 0,
+      relToParent: '',
     },
     visit(node) {
-      items.push({ item: node.root, depth: node.depth })
+      items.push({
+        item: node.root,
+        depth: node.depth,
+        relToParent: node.relToParent,
+      })
       path.push(node.root.uri)
+
       if (node.root == leaf) {
         const terminalPath = `S${path.join("-")}E`;
         console.log("terminal path", terminalPath)
@@ -81,11 +102,21 @@ function buildIndividualTree(tree: Hierarchy, leaf: HierarchyItem) {
     getChildren(node) {
       return node.root.children
         .filter(childRelation => {
-          if (!includedURIs.has(childRelation.uri)) return false
-          return true
+          if (!includedURIs.has(childRelation.uri)) return false;
+          if (!useHappyPaths) return true
+
+          const pathStr = [...path, childRelation.uri].join("-");
+
+          const inHappyPath = happyPaths.some(happyPathStr => (
+            happyPathStr.startsWith(pathStr) ||
+              pathStr.startsWith(happyPathStr)
+          ))
+
+          return inHappyPath
         })
-        .map(({ uri }) => ({
+        .map(({ uri, rel_uri }) => ({
           root: tree.itemsByURI[uri],
+          relToParent: rel_uri,
           depth: node.depth + 1,
         }))
     }
@@ -132,18 +163,36 @@ function HierarchyItem(props: HierarchyItemProps) {
 }
 
 export function Hierarchy(props: HierarchyProps) {
+  const [ useHappyPaths, setUseHappyPaths ] = useState(false)
   const item = tree.itemsByURI[props.itemURI]
-  const { items } = buildIndividualTree(tree, item)
+  const { items } = buildIndividualTree(tree, item, useHappyPaths)
 
   return (
-    h("div", null, items.map(({ item, depth }) => (
-      h("div", {
-        key: item.uri,
-        style: {
-          marginLeft: `${depth * 1.5}em`,
-        },
-      }, h(HierarchyItem, { uri: item.uri }))
-    )))
+    h("div", null, [
+      h("label", null, [
+        "Use happy path",
+        h("input", {
+          type: "checkbox",
+          onChange() {
+            setUseHappyPaths(prev => !prev)
+          },
+        }),
+      ]),
+      h("div", null, [
+        items.map(({ item, depth, relToParent }) => (
+          h("div", {
+            key: item.uri,
+            style: {
+              marginLeft: `${depth * 1.5}em`,
+            },
+          }, [
+            // relToParent,
+            // " ",
+            h(HierarchyItem, { uri: item.uri }),
+          ])
+        ))
+      ]),
+    ])
   )
 }
 
