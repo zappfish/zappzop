@@ -173,19 +173,34 @@ const d = {
 
 export function Hierarchy(props: HierarchyProps) {
   const [ useHappyPaths, setUseHappyPaths ] = useState(false)
+  const [ showRelations, setShowRelations ] = useState(false)
   const item = tree.itemsByURI[props.itemURI]
   const { items } = buildIndividualTree(tree, item, useHappyPaths)
 
   return (
     h("div", null, [
-      h("label", null, [
-        "Use happy path",
-        h("input", {
-          type: "checkbox",
-          onChange() {
-            setUseHappyPaths(prev => !prev)
-          },
-        }),
+      h("div", null, [
+        h("label", null, [
+          "Show relations",
+          h("input", {
+            type: "checkbox",
+            onChange() {
+              setShowRelations(prev => !prev)
+            },
+          }),
+        ]),
+
+        h("br", null),
+
+        h("label", null, [
+          "Use happy path",
+          h("input", {
+            type: "checkbox",
+            onChange() {
+              setUseHappyPaths(prev => !prev)
+            },
+          }),
+        ]),
       ]),
       h("div", null, [
         h("svg", {
@@ -207,7 +222,10 @@ export function Hierarchy(props: HierarchyProps) {
             }, [
               // relToParent,
               // " ",
-              h("text", null, item.label)
+              h("text", null, [
+                showRelations ? relToParent + " " : '',
+                item.label
+              ])
             ])
           )))
         ]),
