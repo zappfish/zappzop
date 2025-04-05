@@ -25,14 +25,20 @@ function Main() {
       ]),
     ]),
     h("hr", null),
-    h(Hierarchy, { itemURI }),
-    h("hr", null),
-    h(Search, {
-      onItemSelect: itemURI => {
-        window.location.hash = itemURI
-        setItemURI(itemURI)
-      },
-    })
+    h("div", {
+      style: {
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+      }
+    }, [
+      h(Search, {
+        onItemSelect: itemURI => {
+          window.location.hash = itemURI
+          setItemURI(itemURI)
+        },
+      }),
+      h(Hierarchy, { itemURI }),
+    ]),
   ])
 }
 
