@@ -162,6 +162,15 @@ function HierarchyItem(props: HierarchyItemProps) {
   )
 }
 
+const d = {
+  paddingTop: 20,
+  paddingBottom: 20,
+  tree: {
+    itemHeight: 20,
+    depthIndent: 20,
+  }
+}
+
 export function Hierarchy(props: HierarchyProps) {
   const [ useHappyPaths, setUseHappyPaths ] = useState(false)
   const item = tree.itemsByURI[props.itemURI]
@@ -179,18 +188,29 @@ export function Hierarchy(props: HierarchyProps) {
         }),
       ]),
       h("div", null, [
-        items.map(({ item, depth, relToParent }) => (
-          h("div", {
-            key: item.uri,
-            style: {
-              marginLeft: `${depth * 1.5}em`,
-            },
-          }, [
-            // relToParent,
-            // " ",
-            h(HierarchyItem, { uri: item.uri }),
-          ])
-        ))
+        h("svg", {
+          style: {
+            border: "1px solid #ccc",
+          },
+          height: items.length * d.tree.itemHeight + d.paddingTop + d.paddingBottom,
+          width: 1000,
+        }, [
+          h("g", {
+            transform: `translate(0, ${d.paddingTop})`,
+          }, items.map(({ item, depth, relToParent }, i) => (
+            h("g", {
+              transform: `translate(${depth * d.tree.depthIndent}, ${i * d.tree.itemHeight})`,
+              key: item.uri,
+              style: {
+                marginLeft: `${depth * 1.5}em`,
+              },
+            }, [
+              // relToParent,
+              // " ",
+              h("text", null, item.label)
+            ])
+          )))
+        ]),
       ]),
     ])
   )
