@@ -46,6 +46,12 @@ const happyPaths = [
   //     whole organism
   //       anatomical system
   "ZFA:0100000-ZFA:0000037-ZFA:0001094-ZFA:0001439",
+
+  // zebrafish anatomical entity
+  //   anatomical structure
+  //     whole organism
+  //       embryonic structure
+  "ZFA:0100000-ZFA:0000037-ZFA:0001094-ZFA:0001105",
 ]
 
 function buildIndividualTree(
