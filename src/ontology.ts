@@ -1,5 +1,5 @@
-import lunr from "lunr"
-import treeverse from "treeverse"
+import lunr from "lunr";
+import treeverse from "treeverse";
 
 export type LevelRelation = {
   // predicate: string;
@@ -7,20 +7,20 @@ export type LevelRelation = {
 
   // object: string;
   uri: string;
-}
+};
 
 export type OntologyTerm = {
   uri: string;
   label: string;
-  children: Record<string, Array<string>>
-  parents: Record<string, Array<string>>
-}
+  children: Record<string, Array<string>>;
+  parents: Record<string, Array<string>>;
+};
 
 type Relation = {
-  to: string,
-  predicate: string,
-  inverse: boolean,
-}
+  to: string;
+  predicate: string;
+  inverse: boolean;
+};
 
 export default class Ontology<T extends OntologyTerm> {
   root: T;
@@ -32,7 +32,7 @@ export default class Ontology<T extends OntologyTerm> {
   parentsByURI: Record<string, Relation[]>;
 
   constructor(items: Array<T>) {
-    const itemsByURI: Record<string, T> = {}
+    const itemsByURI: Record<string, T> = {};
     const parentsByURI: Record<string, Relation[]> = {};
     const childrenByURI: Record<string, Relation[]> = {};
 
@@ -42,62 +42,60 @@ export default class Ontology<T extends OntologyTerm> {
       for (const [relURI, termURIs] of Object.entries(item.children)) {
         termURIs.forEach(childURI => {
           if (!childrenByURI.hasOwnProperty(item.uri)) {
-            childrenByURI[item.uri] = []
+            childrenByURI[item.uri] = [];
           }
 
           if (!parentsByURI.hasOwnProperty(childURI)) {
-            parentsByURI[childURI] = []
+            parentsByURI[childURI] = [];
           }
 
           childrenByURI[item.uri].push({
-            to: childURI, 
+            to: childURI,
             predicate: relURI,
             inverse: false,
-          })
+          });
 
           parentsByURI[childURI].push({
             to: item.uri,
             predicate: relURI,
             inverse: true,
-          })
-        })
+          });
+        });
       }
 
       for (const [relURI, termURIs] of Object.entries(item.parents)) {
         termURIs.forEach(parentURI => {
           if (!parentsByURI.hasOwnProperty(item.uri)) {
-            parentsByURI[item.uri] = []
+            parentsByURI[item.uri] = [];
           }
 
           if (!childrenByURI.hasOwnProperty(parentURI)) {
-            childrenByURI[parentURI] = []
+            childrenByURI[parentURI] = [];
           }
 
           parentsByURI[item.uri].push({
             to: parentURI,
             predicate: relURI,
             inverse: false,
-          })
+          });
 
           childrenByURI[parentURI].push({
-            to: item.uri, 
+            to: item.uri,
             predicate: relURI,
             inverse: true,
-          })
-
-        })
+          });
+        });
       }
 
       if (!childrenByURI.hasOwnProperty(item.uri)) {
-        childrenByURI[item.uri] = []
+        childrenByURI[item.uri] = [];
       }
       if (!parentsByURI.hasOwnProperty(item.uri)) {
-        parentsByURI[item.uri] = []
+        parentsByURI[item.uri] = [];
       }
-
     }
 
-    const root = items.find(item => parentsByURI[item.uri].length === 0)
+    const root = items.find(item => parentsByURI[item.uri].length === 0);
     if (!root) throw Error();
 
     this.root = root;
@@ -106,78 +104,75 @@ export default class Ontology<T extends OntologyTerm> {
     this.parentsByURI = parentsByURI;
     this.childrenByURI = childrenByURI;
 
-    this.index = lunr((builder) => {
+    this.index = lunr(builder => {
       builder.ref("uri");
       builder.field("label");
 
       items.forEach(item => {
-        builder.add(item)
-      })
-    })
+        builder.add(item);
+      });
+    });
   }
 
   getItem(uri: string) {
-    const item = this.itemsByURI[uri]
+    const item = this.itemsByURI[uri];
 
     if (item === undefined) {
       throw new Error(`No item in ontology with URI ${uri}`);
     }
-    return item
+    return item;
   }
 
   findAllParents(item: T) {
-    const parents: Array<T> = []
+    const parents: Array<T> = [];
 
     treeverse.breadth({
       tree: item,
       visit(item) {
-        parents.push(item)
+        parents.push(item);
       },
-      getChildren: node => this.parentsByURI[node.uri]
-        .map(rel => this.getItem(rel.to))
-    })
+      getChildren: node =>
+        this.parentsByURI[node.uri].map(rel => this.getItem(rel.to)),
+    });
 
-    parents.shift()
+    parents.shift();
 
-    return parents
+    return parents;
   }
 
   findAllChildren(item: T) {
-    const children: Array<T> = []
+    const children: Array<T> = [];
 
     treeverse.breadth({
       tree: item,
       visit(item) {
-        children.push(item)
+        children.push(item);
       },
-      getChildren: node => this.childrenByURI[node.uri]
-        .map(rel => this.getItem(rel.to))
-    })
+      getChildren: node =>
+        this.childrenByURI[node.uri].map(rel => this.getItem(rel.to)),
+    });
 
-    children.shift()
+    children.shift();
 
-    return children
+    return children;
   }
 
   getTreeURIsForItem(item: T) {
-    const uris = new Set([item.uri])
+    const uris = new Set([item.uri]);
 
     this.findAllParents(item).forEach(node => {
-      uris.add(node.uri)
-    })
+      uris.add(node.uri);
+    });
 
-    return uris
+    return uris;
   }
 
-  buildFlatTree(
-    leaf: T,
-    happyPaths?: Array<string>,
-  ) {
+  buildFlatTree(leaf: T, happyPaths?: Array<string>) {
     type ItemWithDepth = {
       item: T;
       relToParent: string | null;
       depth: number;
-    }
+    };
     const items: Array<ItemWithDepth> = [];
     const treeURIs = this.getTreeURIsForItem(leaf);
     const path: Array<string> = [];
@@ -189,28 +184,31 @@ export default class Ontology<T extends OntologyTerm> {
         depth: 0,
       },
       visit(node) {
-        items.push(node)
-        path.push(node.item.uri)
+        items.push(node);
+        path.push(node.item.uri);
       },
       leave() {
-        path.pop()
+        path.pop();
       },
       getChildren: node => {
-        const children: ItemWithDepth[] = []
-        const childRelations = this.childrenByURI[node.item.uri]
+        const children: ItemWithDepth[] = [];
+        const childRelations = this.childrenByURI[node.item.uri];
 
         for (const rel of childRelations) {
           if (!treeURIs.has(rel.to)) continue;
 
-          const relPredicate = !rel.inverse ? `^${rel.predicate}` : rel.predicate
+          const relPredicate = !rel.inverse
+            ? `^${rel.predicate}`
+            : rel.predicate;
 
           if (happyPaths) {
-            const pathStr = [...path, relPredicate].join("-")
+            const pathStr = [...path, relPredicate].join("-");
 
-            const inHappyPath = happyPaths.some(happyPathStr => (
-              happyPathStr.startsWith(pathStr) ||
-                pathStr.startsWith(happyPathStr)
-            ))
+            const inHappyPath = happyPaths.some(
+              happyPathStr =>
+                happyPathStr.startsWith(pathStr) ||
+                pathStr.startsWith(happyPathStr),
+            );
 
             if (!inHappyPath) continue;
           }
@@ -219,14 +217,13 @@ export default class Ontology<T extends OntologyTerm> {
             item: this.getItem(rel.to),
             relToParent: relPredicate,
             depth: node.depth + 1,
-          })
-
+          });
         }
 
         return children;
       },
-    })
+    });
 
-    return items
+    return items;
   }
 }
