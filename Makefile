@@ -11,6 +11,14 @@ all:
 test:
 	$(NPM_BIN)/tap --disable-coverage -Rtap tests
 
+.PHONY: lint
+lint:
+	-$(NPM_BIN)/prettier -c src tests
+
+.PHONY: format
+format:
+	$(NPM_BIN)/prettier -w src tests
+
 .PHONY: serve
 serve:
 	$(ESBUILD) $(TS_ENTRY) --bundle --sourcemap --outdir=$(OUTPUT_DIR) --servedir=.
