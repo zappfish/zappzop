@@ -202,7 +202,7 @@ export default class Ontology<T extends OntologyTerm> {
             : rel.predicate;
 
           if (happyPaths) {
-            const pathStr = [...path, relPredicate].join("-");
+            const pathStr = [...path, rel.to].join("-");
 
             const inHappyPath = happyPaths.some(
               happyPathStr =>

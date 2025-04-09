@@ -93,7 +93,7 @@ export default function Hierarchy(props: HierarchyProps) {
             setUseHappyPaths(prev => !prev);
           },
         }),
-        " Use happy path",
+        " Use preferred paths",
       ]),
     ]),
     h("div", null, [
