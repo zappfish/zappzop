@@ -1,5 +1,5 @@
-import lunr from "lunr";
-import treeverse from "treeverse";
+import * as lunr from "lunr";
+import * as treeverse from "treeverse";
 
 export type LevelRelation = {
   // predicate: string;
@@ -49,13 +49,13 @@ export default class Ontology<T extends OntologyTerm> {
             parentsByURI[childURI] = [];
           }
 
-          childrenByURI[item.uri].push({
+          childrenByURI[item.uri]!.push({
             to: childURI,
             predicate: relURI,
             inverse: false,
           });
 
-          parentsByURI[childURI].push({
+          parentsByURI[childURI]!.push({
             to: item.uri,
             predicate: relURI,
             inverse: true,
@@ -73,13 +73,13 @@ export default class Ontology<T extends OntologyTerm> {
             childrenByURI[parentURI] = [];
           }
 
-          parentsByURI[item.uri].push({
+          parentsByURI[item.uri]!.push({
             to: parentURI,
             predicate: relURI,
             inverse: false,
           });
 
-          childrenByURI[parentURI].push({
+          childrenByURI[parentURI]!.push({
             to: item.uri,
             predicate: relURI,
             inverse: true,
@@ -95,7 +95,7 @@ export default class Ontology<T extends OntologyTerm> {
       }
     }
 
-    const root = items.find(item => parentsByURI[item.uri].length === 0);
+    const root = items.find(item => parentsByURI[item.uri]!.length === 0);
     if (!root) throw Error();
 
     this.root = root;
@@ -132,7 +132,7 @@ export default class Ontology<T extends OntologyTerm> {
         parents.push(item);
       },
       getChildren: node =>
-        this.parentsByURI[node.uri].map(rel => this.getItem(rel.to)),
+        this.parentsByURI[node.uri]!.map(rel => this.getItem(rel.to)),
     });
 
     parents.shift();
@@ -149,7 +149,7 @@ export default class Ontology<T extends OntologyTerm> {
         children.push(item);
       },
       getChildren: node =>
-        this.childrenByURI[node.uri].map(rel => this.getItem(rel.to)),
+        this.childrenByURI[node.uri]!.map(rel => this.getItem(rel.to)),
     });
 
     children.shift();
