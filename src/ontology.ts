@@ -46,11 +46,11 @@ export default class Ontology<T extends OntologyTerm> {
 
       for (const [relURI, termURIs] of Object.entries(item.children)) {
         termURIs.forEach(childURI => {
-          if (!childrenByURI.hasOwnProperty(item.uri)) {
+          if (!Object.hasOwn(childrenByURI, item.uri)) {
             childrenByURI[item.uri] = [];
           }
 
-          if (!parentsByURI.hasOwnProperty(childURI)) {
+          if (!Object.hasOwn(parentsByURI, childURI)) {
             parentsByURI[childURI] = [];
           }
 
@@ -70,11 +70,11 @@ export default class Ontology<T extends OntologyTerm> {
 
       for (const [relURI, termURIs] of Object.entries(item.parents)) {
         termURIs.forEach(parentURI => {
-          if (!parentsByURI.hasOwnProperty(item.uri)) {
+          if (!Object.hasOwn(parentsByURI, item.uri)) {
             parentsByURI[item.uri] = [];
           }
 
-          if (!childrenByURI.hasOwnProperty(parentURI)) {
+          if (!Object.hasOwn(childrenByURI, parentURI)) {
             childrenByURI[parentURI] = [];
           }
 
@@ -92,10 +92,10 @@ export default class Ontology<T extends OntologyTerm> {
         });
       }
 
-      if (!childrenByURI.hasOwnProperty(item.uri)) {
+      if (!Object.hasOwn(childrenByURI, item.uri)) {
         childrenByURI[item.uri] = [];
       }
-      if (!parentsByURI.hasOwnProperty(item.uri)) {
+      if (!Object.hasOwn(parentsByURI, item.uri)) {
         parentsByURI[item.uri] = [];
       }
     }

@@ -33,7 +33,7 @@ export default function parseGraph(graph: OBOGraph) {
       const parents = terms.get(edge.sub)?.parents;
       if (!parents) continue;
 
-      if (!parents.hasOwnProperty(predID)) {
+      if (!Object.hasOwn(parents, predID)) {
         parents[predID] = [];
       }
 
