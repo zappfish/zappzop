@@ -19,6 +19,7 @@ test:
 
 .PHONY: lint
 lint:
+	-$(NPM_BIN)/eslint src tests
 	-$(NPM_BIN)/prettier -c src tests
 
 .PHONY: format

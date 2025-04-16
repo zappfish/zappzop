@@ -17,12 +17,16 @@
     "treeverse": "^3.0.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.24.0",
     "@types/lunr": "^2.3.7",
     "@types/treeverse": "^3.0.5",
     "@typescript-eslint/eslint-plugin": "^8.29.0",
     "@typescript-eslint/parser": "^8.29.0",
+    "eslint": "^9.24.0",
+    "globals": "^16.0.0",
     "prettier": "^3.5.3",
     "tap": "^21.1.0",
-    "tsx": "^4.19.3"
+    "tsx": "^4.19.3",
+    "typescript-eslint": "^8.30.1"
   }
 }
