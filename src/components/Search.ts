@@ -1,6 +1,6 @@
 import { h } from "preact";
 import lunr from "lunr";
-import { useState } from "preact/hooks";
+import { useState, useEffect } from "preact/hooks";
 import HierarchyItem from "./Term";
 import zfa from "../zfa";
 
@@ -8,8 +8,25 @@ type SearchProps = {
   onItemSelect: (itemURI: string) => void;
 };
 
+function search(term: string, sortByUsage: boolean) {
+  const results = zfa.index.search(term + "*");
+
+  if (sortByUsage) {
+    results.sort((a, b) => {
+      return zfa.getItem(b.ref).zfin_usage - zfa.getItem(a.ref).zfin_usage;
+    });
+  }
+
+  return results.slice(0, 100);
+}
+
 export default function Search(props: SearchProps) {
   const [searchResult, setSearchResult] = useState<lunr.Index.Result[]>([]);
+  const [sortByUsage, setSortByUsage] = useState(true);
+
+  useEffect(() => {
+    setSearchResult(search("", sortByUsage));
+  }, []);
 
   return h("div", null, [
     h(
@@ -18,9 +35,7 @@ export default function Search(props: SearchProps) {
       h("input", {
         type: "text",
         onInput(e) {
-          setSearchResult(
-            zfa.index.search(e.currentTarget.value + "*").slice(0, 100),
-          );
+          setSearchResult(search(e.currentTarget.value + "*", sortByUsage));
         },
       }),
     ),
