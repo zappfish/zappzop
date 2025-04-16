@@ -19,6 +19,10 @@ lint:
 format:
 	$(NPM_BIN)/prettier -w src tests
 
+.PHONY: build
+build:
+	$(ESBUILD) $(TS_ENTRY) --bundle --outdir=$(OUTPUT_DIR)
+
 .PHONY: serve
 serve:
 	$(ESBUILD) $(TS_ENTRY) --bundle --sourcemap --outdir=$(OUTPUT_DIR) --servedir=.
