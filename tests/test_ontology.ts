@@ -1,6 +1,5 @@
 import Ontology, { OntologyTerm } from "../src/ontology";
-// import test from "tape"
-import { test } from "tap";
+import t from "tap";
 
 const items: OntologyTerm[] = [
   {
@@ -38,7 +37,7 @@ const items: OntologyTerm[] = [
   },
 ];
 
-test("load well formed ontology", t => {
+t.test("load well formed ontology", t => {
   const o = new Ontology(items);
   t.equal(o.root, items[0], "should find root node");
 
