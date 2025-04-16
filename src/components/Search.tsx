@@ -1,4 +1,3 @@
-import { h } from "preact";
 import lunr from "lunr";
 import { useState, useEffect } from "preact/hooks";
 import HierarchyItem from "./Term";
@@ -28,37 +27,29 @@ export default function Search(props: SearchProps) {
     setSearchResult(search("", sortByUsage));
   }, []);
 
-  return h("div", null, [
-    h(
-      "div",
-      null,
-      h("input", {
-        type: "text",
-        onInput(e) {
-          setSearchResult(search(e.currentTarget.value + "*", sortByUsage));
-        },
-      }),
-    ),
-
-    h(
-      "ul",
-      null,
-      searchResult.map(result =>
-        h(
-          "li",
-          {
-            key: result.ref,
-          },
-          [
-            h(HierarchyItem, {
-              uri: result.ref,
-              onSelect(item) {
-                props.onItemSelect(item.uri);
-              },
-            }),
-          ],
-        ),
-      ),
-    ),
-  ]);
+  return (
+    <div>
+      <div>
+        <input
+          type="text"
+          onInput={e => {
+            setSearchResult(search(e.currentTarget.value + "*", sortByUsage));
+          }}
+        />
+      </div>
+      <ul>
+        {searchResult.map(result => (
+          <li key={result.ref}>
+            <HierarchyItem
+              uri={result.ref}
+              onSelect={item => {
+                props.onItemSelect(item.URI);
+              }}
+            />
+          </li>
+        ))}
+      </ul>
+      ])
+    </div>
+  );
 }
