@@ -9,7 +9,7 @@ all:
 
 .PHONY: test
 test:
-	$(NPM_BIN)/tap --disable-coverage -Rtap tests
+	$(NPM_BIN)/tap --disable-coverage tests
 
 .PHONY: lint
 lint:
