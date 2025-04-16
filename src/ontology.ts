@@ -1,5 +1,5 @@
-import * as lunr from "lunr";
-import * as treeverse from "treeverse";
+import lunr from "lunr";
+import treeverse from "treeverse";
 
 export type LevelRelation = {
   // predicate: string;
