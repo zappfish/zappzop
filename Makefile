@@ -9,6 +9,10 @@ ESBUILD_OPTIONS := $(TS_ENTRY) --bundle --outdir=$(OUTPUT_DIR) --jsx=automatic -
 .PHONY: all
 all:
 
+.PHONY: clean
+clean:
+	rm -rf $(OUTPUT_DIR)
+
 .PHONY: test
 test:
 	$(NPM_BIN)/tap --disable-coverage tests
