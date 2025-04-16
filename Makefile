@@ -4,6 +4,8 @@ ESBUILD := $(NPM_BIN)/esbuild
 TS_ENTRY := src/index.ts
 OUTPUT_DIR := dist
 
+ESBUILD_OPTIONS := $(TS_ENTRY) --bundle --outdir=$(OUTPUT_DIR) --jsx=automatic --jsx-dev
+
 .PHONY: all
 all:
 
@@ -21,8 +23,8 @@ format:
 
 .PHONY: build
 build:
-	$(ESBUILD) $(TS_ENTRY) --bundle --outdir=$(OUTPUT_DIR)
+	$(ESBUILD) $(ESBUILD_OPTIONS)
 
 .PHONY: serve
 serve:
-	$(ESBUILD) $(TS_ENTRY) --bundle --sourcemap --outdir=$(OUTPUT_DIR) --servedir=.
+	$(ESBUILD) $(ESBUILD_OPTIONS) --sourcemap --servedir=.
