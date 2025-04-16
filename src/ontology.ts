@@ -22,6 +22,11 @@ type Relation = {
   inverse: boolean;
 };
 
+type FlatTreeOptions = {
+  happyPaths?: Array<string>;
+  expandPaths?: Array<string>;
+};
+
 export default class Ontology<T extends OntologyTerm> {
   root: T;
   items: Array<T>;
@@ -167,11 +172,13 @@ export default class Ontology<T extends OntologyTerm> {
     return uris;
   }
 
-  buildFlatTree(leaf: T, happyPaths?: Array<string>) {
+  buildFlatTree(leaf: T, opts?: FlatTreeOptions) {
     type ItemWithDepth = {
       item: T;
       relToParent: string | null;
       depth: number;
+      path: string;
+      manuallyAdded: boolean;
     };
     const items: Array<ItemWithDepth> = [];
     const treeURIs = this.getTreeURIsForItem(leaf);
@@ -182,6 +189,8 @@ export default class Ontology<T extends OntologyTerm> {
         item: this.root,
         relToParent: null,
         depth: 0,
+        path: this.root.uri,
+        manuallyAdded: false,
       },
       visit(node) {
         items.push(node);
@@ -192,31 +201,43 @@ export default class Ontology<T extends OntologyTerm> {
       },
       getChildren: node => {
         const children: ItemWithDepth[] = [];
-        const childRelations = this.childrenByURI[node.item.uri];
+        const childRelations = this.childrenByURI[node.item.uri]!;
 
         for (const rel of childRelations) {
-          if (!treeURIs.has(rel.to)) continue;
+          let manuallyAdded = false;
+
+          const pathStr = [...path, rel.to].join("-");
 
           const relPredicate = !rel.inverse
             ? `^${rel.predicate}`
             : rel.predicate;
 
-          if (happyPaths) {
-            const pathStr = [...path, rel.to].join("-");
+          if (opts?.expandPaths && opts.expandPaths.includes(path.join("-"))) {
+            if (!treeURIs.has(rel.to)) {
+              manuallyAdded = true;
+            }
+            // Great!
+          } else {
+            if (manuallyAdded) continue;
+            if (!treeURIs.has(rel.to)) continue;
 
-            const inHappyPath = happyPaths.some(
-              happyPathStr =>
-                happyPathStr.startsWith(pathStr) ||
-                pathStr.startsWith(happyPathStr),
-            );
+            if (opts?.happyPaths) {
+              const inHappyPath = opts.happyPaths.some(
+                happyPathStr =>
+                  happyPathStr.startsWith(pathStr) ||
+                  pathStr.startsWith(happyPathStr),
+              );
 
-            if (!inHappyPath) continue;
+              if (!inHappyPath) continue;
+            }
           }
 
           children.push({
             item: this.getItem(rel.to),
             relToParent: relPredicate,
             depth: node.depth + 1,
+            path: pathStr,
+            manuallyAdded,
           });
         }
 

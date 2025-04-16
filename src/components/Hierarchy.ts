@@ -1,5 +1,5 @@
 import { h } from "preact";
-import { useState } from "preact/hooks";
+import { useState, useEffect } from "preact/hooks";
 import zfa from "../zfa";
 
 const happyPaths = [
@@ -40,9 +40,11 @@ function drawPathFor(
   items: ReturnType<typeof zfa.buildFlatTree>,
   curItemIdx: number,
 ) {
-  const originItem = items[curItemIdx];
+  const originItem = items[curItemIdx]!;
+
   let pathStr = "M5 0 ";
   let vIdx = 0;
+
   const horizontalTicksAt: Array<number> = [];
 
   for (const treeItem of items.slice(curItemIdx + 1)) {
@@ -68,9 +70,18 @@ function drawPathFor(
 
 export default function Hierarchy(props: HierarchyProps) {
   const [useHappyPaths, setUseHappyPaths] = useState(false);
+  const [expandPaths, setExpandPaths] = useState<Array<string>>([]);
   const [showRelations, setShowRelations] = useState(false);
-  const item = zfa.itemsByURI[props.itemURI];
-  const items = zfa.buildFlatTree(item, useHappyPaths ? happyPaths : undefined);
+
+  useEffect(() => {
+    setExpandPaths([]);
+  }, [props.itemURI]);
+
+  const item = zfa.itemsByURI[props.itemURI]!;
+  const items = zfa.buildFlatTree(item, {
+    happyPaths: useHappyPaths ? happyPaths : undefined,
+    expandPaths: expandPaths.length ? expandPaths : undefined,
+  });
 
   return h("div", null, [
     h("div", null, [
@@ -113,7 +124,7 @@ export default function Hierarchy(props: HierarchyProps) {
             {
               transform: `translate(${d.paddingLeft}, ${d.paddingTop})`,
             },
-            items.map(({ item, depth, relToParent }, i) =>
+            items.map(({ item, depth, relToParent, path }, i) =>
               h(
                 "g",
                 {
@@ -121,10 +132,29 @@ export default function Hierarchy(props: HierarchyProps) {
                   key: item.uri,
                 },
                 [
-                  h("text", null, [
-                    showRelations ? relToParent + " " : "",
-                    item.label,
-                  ]),
+                  h(
+                    "text",
+                    {
+                      transform:
+                        item.uri !== props.itemURI
+                          ? undefined
+                          : "translate(12, 0)",
+                    },
+                    [
+                      h("title", null, item.uri),
+                      showRelations ? relToParent + " " : "",
+                      item.label,
+                    ],
+                  ),
+
+                  item.uri !== props.itemURI
+                    ? null
+                    : h("circle", {
+                        cx: 5,
+                        cy: -d.tree.itemHeight / 4,
+                        r: 3,
+                        fill: "red",
+                      }),
 
                   h("path", {
                     d: drawPathFor(items, i),
@@ -134,6 +164,28 @@ export default function Hierarchy(props: HierarchyProps) {
                     "stroke-width": 1,
                     "stroke-dasharray": "1",
                   }),
+
+                  zfa.childrenByURI[item.uri]!.length === 0
+                    ? null
+                    : h("rect", {
+                        x: -14,
+                        y: -d.tree.itemHeight / 2,
+                        width: 10,
+                        height: 10,
+                        onClick() {
+                          if (expandPaths.includes(path)) {
+                            setExpandPaths(prev =>
+                              prev.filter(p => p !== path),
+                            );
+                          } else {
+                            setExpandPaths(prev => [...prev, path]);
+                          }
+                        },
+                        fill: expandPaths.includes(path) ? "#ccc" : "white",
+                        "fill-opacity": 0.9,
+                        stroke: "black",
+                        strokeWidth: 1,
+                      }),
                 ],
               ),
             ),

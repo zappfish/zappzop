@@ -51,10 +51,52 @@ t.test("load well formed ontology", t => {
 
   t.equal(o.getItem("ex:A"), items[0]);
 
-  t.same(o.buildFlatTree(items[3]!), [
-    { item: items[0], relToParent: null, depth: 0 },
-    { item: items[2], relToParent: "rdfs:subClassOf", depth: 1 },
-    { item: items[3], relToParent: "rdfs:subClassOf", depth: 2 },
+  t.end();
+});
+
+t.test("build a flat tree", t => {
+  const o = new Ontology(items);
+
+  t.match(o.buildFlatTree(items[3]!), [
+    { item: { uri: "ex:A" }, relToParent: null, depth: 0 },
+    { item: { uri: "ex:C" }, relToParent: "rdfs:subClassOf", depth: 1 },
+    { item: { uri: "ex:D" }, relToParent: "rdfs:subClassOf", depth: 2 },
+  ]);
+
+  t.end();
+});
+
+t.test("build a flat tree with one level manually expanded", t => {
+  const o = new Ontology(items);
+  const tree = o.buildFlatTree(items[3]!, {
+    expandPaths: ["ex:A"],
+  });
+
+  t.match(tree, [
+    {
+      item: { uri: "ex:A" },
+      relToParent: null,
+      depth: 0,
+      manuallyAdded: false,
+    },
+    {
+      item: { uri: "ex:B" },
+      relToParent: "rdfs:subClassOf",
+      depth: 1,
+      manuallyAdded: true,
+    },
+    {
+      item: { uri: "ex:C" },
+      relToParent: "rdfs:subClassOf",
+      depth: 1,
+      manuallyAdded: false,
+    },
+    {
+      item: { uri: "ex:D" },
+      relToParent: "rdfs:subClassOf",
+      depth: 2,
+      manuallyAdded: false,
+    },
   ]);
 
   t.end();
