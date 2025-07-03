@@ -11,7 +11,7 @@ export type LevelRelation = {
 
 export type OntologyTerm = {
   uri: string;
-  label: string;
+  label: string | null;
   children: Record<string, Array<string>>;
   parents: Record<string, Array<string>>;
 };
