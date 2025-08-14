@@ -1,12 +1,5 @@
-import { FromSchema } from "json-schema-to-ts";
-import GraphSchema from "./graph-schema";
-import MetaSchema from "./meta-schema";
+import { OBOGraph } from  "./schema";
 import Ontology, { OntologyTerm } from "../../ontology";
-
-export type OBOGraph = FromSchema<
-  typeof GraphSchema,
-  { references: [typeof MetaSchema] }
->;
 
 const parentProperties: Record<string, string> = {
   is_a: "rdfs:subClassOf",
@@ -21,7 +14,7 @@ export default function parseGraph(graph: OBOGraph) {
 
     terms.set(node.id, {
       uri: node.id,
-      label: node.lbl,
+      label: node.lbl || node.id,
       parents: {},
       children: {},
     });

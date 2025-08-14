@@ -11,10 +11,10 @@
   "license": "BSD-3-Clause",
   "dependencies": {
     "esbuild": "^0.25.2",
-    "json-schema-to-ts": "^3.1.1",
     "lunr": "^2.3.9",
     "preact": "^10.26.4",
-    "treeverse": "^3.0.0"
+    "treeverse": "^3.0.0",
+    "zod": "^4.0.17"
   },
   "devDependencies": {
     "@eslint/js": "^9.24.0",
