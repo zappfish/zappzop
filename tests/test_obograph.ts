@@ -1,21 +1,20 @@
-import parseOBOGraph from "../src/loaders/obograph";
-import { OBOGraphsSchema } from "../src/loaders/obograph/schema";
+import OBOGraphLoader from "../src/loaders/obograph";
 import * as exampleGraph from "./data/basic.json";
 import t from "tap";
 
 t.test("load OBO graph", t => {
-  const result = OBOGraphsSchema.safeParse(exampleGraph)
+  const loader = new OBOGraphLoader();
+  const graph = loader.fromString(JSON.stringify(exampleGraph));
 
-  if (!result.success) {
-    console.log(result.error.issues)
-    throw Error()
-  }
+  const expectedRoot = "http://purl.obolibrary.org/obo/UBERON_0002101";
 
-  const graph = result.data.graphs[0]!;
-  const ontology = parseOBOGraph(graph);
+  t.equal(graph.nodes.length, 4);
+  t.equal(graph.roots.length, 1);
+  t.equal(graph.roots[0]!.uri, expectedRoot);
 
-  t.equal(ontology.items.length, 4);
-  t.equal(ontology.root.uri, "http://purl.obolibrary.org/obo/UBERON_0002101");
+  const hierarchy = graph.getHierarchy(expectedRoot);
+
+  t.equal(hierarchy.items().length, 4);
 
   t.end();
 });
