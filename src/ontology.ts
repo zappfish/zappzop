@@ -1,15 +1,6 @@
-import lunr from "lunr";
 import treeverse from "treeverse";
 
-export type LevelRelation = {
-  // predicate: string;
-  rel_uri: string;
-
-  // object: string;
-  uri: string;
-};
-
-export type OntologyTerm = {
+export type GraphNode = {
   uri: string;
   label: string | null;
   children: Record<string, Array<string>>;
@@ -23,92 +14,92 @@ type Relation = {
 };
 
 type FlatTreeOptions = {
-  happyPaths?: Array<string>;
+  preferredPaths?: Array<string>;
   expandPaths?: Array<string>;
 };
 
-export default class Ontology<T extends OntologyTerm> {
-  root: T;
-  items: Array<T>;
-  itemsByURI: Record<string, T>;
-  index: lunr.Index;
+export default class Graph<T extends GraphNode> {
+  roots: Array<T>;
+  nodes: Array<T>;
+  nodesByURI: Record<string, T>;
+  // index: lunr.Index;
 
   childrenByURI: Record<string, Relation[]>;
   parentsByURI: Record<string, Relation[]>;
 
-  constructor(items: Array<T>) {
-    const itemsByURI: Record<string, T> = {};
+  constructor(nodes: Array<T>) {
+    const nodesByURI: Record<string, T> = {};
     const parentsByURI: Record<string, Relation[]> = {};
     const childrenByURI: Record<string, Relation[]> = {};
 
-    for (const item of items) {
-      itemsByURI[item.uri] = item;
+    for (const node of nodes) {
+      nodesByURI[node.uri] = node;
 
-      for (const [relURI, termURIs] of Object.entries(item.children)) {
+      for (const [relURI, termURIs] of Object.entries(node.children)) {
         termURIs.forEach(childURI => {
-          if (!Object.hasOwn(childrenByURI, item.uri)) {
-            childrenByURI[item.uri] = [];
+          if (!Object.hasOwn(childrenByURI, node.uri)) {
+            childrenByURI[node.uri] = [];
           }
 
           if (!Object.hasOwn(parentsByURI, childURI)) {
             parentsByURI[childURI] = [];
           }
 
-          childrenByURI[item.uri]!.push({
+          childrenByURI[node.uri]!.push({
             to: childURI,
             predicate: relURI,
             inverse: false,
           });
 
           parentsByURI[childURI]!.push({
-            to: item.uri,
+            to: node.uri,
             predicate: relURI,
             inverse: true,
           });
         });
       }
 
-      for (const [relURI, termURIs] of Object.entries(item.parents)) {
+      for (const [relURI, termURIs] of Object.entries(node.parents)) {
         termURIs.forEach(parentURI => {
-          if (!Object.hasOwn(parentsByURI, item.uri)) {
-            parentsByURI[item.uri] = [];
+          if (!Object.hasOwn(parentsByURI, node.uri)) {
+            parentsByURI[node.uri] = [];
           }
 
           if (!Object.hasOwn(childrenByURI, parentURI)) {
             childrenByURI[parentURI] = [];
           }
 
-          parentsByURI[item.uri]!.push({
+          parentsByURI[node.uri]!.push({
             to: parentURI,
             predicate: relURI,
             inverse: false,
           });
 
           childrenByURI[parentURI]!.push({
-            to: item.uri,
+            to: node.uri,
             predicate: relURI,
             inverse: true,
           });
         });
       }
 
-      if (!Object.hasOwn(childrenByURI, item.uri)) {
-        childrenByURI[item.uri] = [];
+      if (!Object.hasOwn(childrenByURI, node.uri)) {
+        childrenByURI[node.uri] = [];
       }
-      if (!Object.hasOwn(parentsByURI, item.uri)) {
-        parentsByURI[item.uri] = [];
+      if (!Object.hasOwn(parentsByURI, node.uri)) {
+        parentsByURI[node.uri] = [];
       }
     }
 
-    const root = items.find(item => parentsByURI[item.uri]!.length === 0);
-    if (!root) throw Error();
+    const roots = nodes.filter(item => parentsByURI[item.uri]!.length === 0);
 
-    this.root = root;
-    this.items = items;
-    this.itemsByURI = itemsByURI;
+    this.roots = roots;
+    this.nodes = nodes;
+    this.nodesByURI = nodesByURI;
     this.parentsByURI = parentsByURI;
     this.childrenByURI = childrenByURI;
 
+    /*
     this.index = lunr(builder => {
       builder.ref("uri");
       builder.field("label");
@@ -117,13 +108,27 @@ export default class Ontology<T extends OntologyTerm> {
         builder.add(item);
       });
     });
+    */
+  }
+
+  items() {
+    return this.items;
+  }
+
+  getHierarchy(rootURI: string) {
+    const item = this.getItem(rootURI)
+    return new Hierarchy(item, this)
+  }
+
+  getRootHierarchies() {
+    return new Map(this.roots.map(item => [item.uri, this.getHierarchy(item.uri)]))
   }
 
   getItem(uri: string) {
-    const item = this.itemsByURI[uri];
+    const item = this.nodesByURI[uri];
 
     if (item === undefined) {
-      throw new Error(`No item in ontology with URI ${uri}`);
+      throw new Error(`No item in graph with URI ${uri}`);
     }
     return item;
   }
@@ -161,13 +166,45 @@ export default class Ontology<T extends OntologyTerm> {
 
     return children;
   }
+}
+
+export class Hierarchy<T extends GraphNode> {
+  root: T;
+  graph: Graph<T>;
+  nodesByURI: Record<string, T>;
+
+  constructor(root: T, graph: Graph<T>) {
+    this.root = root;
+    this.graph = graph;
+    this.nodesByURI = Object.fromEntries(this.items().map(node => [node.uri, node]))
+  }
+
+  getItem(uri: string) {
+    const item = this.nodesByURI[uri];
+
+    if (item === undefined) {
+      throw new Error(`No item in hierarchy with URI ${uri}`);
+    }
+    return item;
+  }
+
+  items() {
+    return [this.root, ...this.graph.findAllChildren(this.root)]
+  }
 
   getTreeURIsForItem(item: T) {
     const uris = new Set([item.uri]);
 
-    this.findAllParents(item).forEach(node => {
+    if (!Object.hasOwn(this.nodesByURI, item.uri)) {
+      throw new Error(`No item in hierarchy with URI ${item.uri}`);
+    }
+
+    for (const node of this.graph.findAllParents(item)) {
       uris.add(node.uri);
-    });
+      if (node === this.root) {
+        break;
+      }
+    }
 
     return uris;
   }
@@ -201,7 +238,7 @@ export default class Ontology<T extends OntologyTerm> {
       },
       getChildren: node => {
         const children: ItemWithDepth[] = [];
-        const childRelations = this.childrenByURI[node.item.uri]!;
+        const childRelations = this.graph.childrenByURI[node.item.uri]!;
 
         for (const rel of childRelations) {
           let manuallyAdded = false;
@@ -221,19 +258,19 @@ export default class Ontology<T extends OntologyTerm> {
             if (manuallyAdded) continue;
             if (!treeURIs.has(rel.to)) continue;
 
-            if (opts?.happyPaths) {
-              const inHappyPath = opts.happyPaths.some(
-                happyPathStr =>
-                  happyPathStr.startsWith(pathStr) ||
-                  pathStr.startsWith(happyPathStr),
+            if (opts?.preferredPaths) {
+              const inPreferredPath = opts.preferredPaths.some(
+                preferredPathStr =>
+                  preferredPathStr.startsWith(pathStr) ||
+                  pathStr.startsWith(preferredPathStr),
               );
 
-              if (!inHappyPath) continue;
+              if (!inPreferredPath) continue;
             }
           }
 
           children.push({
-            item: this.getItem(rel.to),
+            item: this.graph.getItem(rel.to),
             relToParent: relPredicate,
             depth: node.depth + 1,
             path: pathStr,
