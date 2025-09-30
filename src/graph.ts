@@ -91,7 +91,10 @@ export default class Graph<T extends GraphNode> {
       }
     }
 
-    const roots = nodes.filter(item => parentsByURI[item.uri]!.length === 0);
+    const roots = nodes.filter(item => (
+      parentsByURI[item.uri]!.length === 0 &&
+      childrenByURI[item.uri]!.length > 0
+    ));
 
     this.roots = roots;
     this.nodes = nodes;
