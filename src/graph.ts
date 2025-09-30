@@ -124,7 +124,13 @@ export default class Graph<T extends GraphNode> {
   }
 
   getRootHierarchies() {
-    return new Map(this.roots.map(item => [item.uri, this.getHierarchy(item.uri)]))
+    const ret: Map<string, Hierarchy<T>> = new Map()
+
+    this.roots.forEach(root => {
+      ret.set(root.uri, this.getHierarchy(root.uri))
+    })
+
+    return ret
   }
 
   getItem(uri: string) {
