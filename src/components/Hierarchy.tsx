@@ -1,28 +1,11 @@
 import { useState, useEffect } from "preact/hooks";
-import zfa from "../zfa";
+import { Hierarchy, GraphNode } from "../graph"
 
-const happyPaths = [
-  // zebrafish anatomical entity
-  //   anatomical structure
-  //     whole organism
-  //       organism subdivision
-  "ZFA:0100000-ZFA:0000037-ZFA:0001094-ZFA:0001308",
-
-  // zebrafish anatomical entity
-  //   anatomical structure
-  //     whole organism
-  //       anatomical system
-  "ZFA:0100000-ZFA:0000037-ZFA:0001094-ZFA:0001439",
-
-  // zebrafish anatomical entity
-  //   anatomical structure
-  //     whole organism
-  //       embryonic structure
-  "ZFA:0100000-ZFA:0000037-ZFA:0001094-ZFA:0001105",
-];
-
-type HierarchyProps = {
+type HierarchyTreeProps<T extends GraphNode = GraphNode> = {
+  hierarchy: Hierarchy<T>;
+  rootURI: string;
   itemURI: string;
+  preferredPaths?: Array<string>;
 };
 
 const d = {
@@ -36,7 +19,7 @@ const d = {
 };
 
 function drawPathFor(
-  items: ReturnType<typeof zfa.buildFlatTree>,
+  items: ReturnType<typeof Hierarchy.prototype.buildFlatTree>,
   curItemIdx: number,
 ) {
   const originItem = items[curItemIdx]!;
@@ -67,18 +50,20 @@ function drawPathFor(
   return pathStr;
 }
 
-export default function Hierarchy(props: HierarchyProps) {
-  const [useHappyPaths, setUseHappyPaths] = useState(false);
+export default function HierarchyTree(props: HierarchyTreeProps) {
+  const { hierarchy, preferredPaths, itemURI } = props
+  const [usePreferredPaths, setUsePreferredPaths] = useState(false);
   const [expandPaths, setExpandPaths] = useState<Array<string>>([]);
   const [showRelations, setShowRelations] = useState(false);
 
   useEffect(() => {
     setExpandPaths([]);
-  }, [props.itemURI]);
+  }, [itemURI]);
 
-  const item = zfa.itemsByURI[props.itemURI]!;
-  const items = zfa.buildFlatTree(item, {
-    happyPaths: useHappyPaths ? happyPaths : undefined,
+  const root = hierarchy.root;
+  const item = hierarchy.getItem(itemURI);
+  const items = hierarchy.buildFlatTree(item, {
+    preferredPaths: usePreferredPaths ? preferredPaths : undefined,
     expandPaths: expandPaths.length ? expandPaths : undefined,
   });
 
@@ -101,7 +86,7 @@ export default function Hierarchy(props: HierarchyProps) {
           <input
             type="checkbox"
             onChange={() => {
-              setUseHappyPaths(prev => !prev);
+              setUsePreferredPaths(prev => !prev);
             }}
           />
           Use preferred paths
@@ -126,15 +111,15 @@ export default function Hierarchy(props: HierarchyProps) {
               >
                 <text
                   transform={
-                    item.uri !== props.itemURI ? undefined : "translate(12, 0)"
+                    item.uri !== root.uri ? undefined : "translate(12, 0)"
                   }
                 >
-                  <title>item.uri</title>
+                  <title>{item.uri}</title>
                   {showRelations ? relToParent + " " : ""}
                   {item.label}
                 </text>
 
-                {item.uri !== props.itemURI ? null : (
+                {item.uri !== props.rootURI ? null : (
                   <circle
                     cx={5}
                     cy={-d.tree.itemHeight / 4}
@@ -153,7 +138,7 @@ export default function Hierarchy(props: HierarchyProps) {
                 />
 
                 <g>
-                  {zfa.childrenByURI[item.uri]!.length === 0 ? null : (
+                  {hierarchy.graph.childrenByURI[item.uri]!.length === 0 ? null : (
                     <rect
                       x={-14}
                       y={-d.tree.itemHeight / 2}
