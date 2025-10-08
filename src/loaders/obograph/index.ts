@@ -1,6 +1,6 @@
-import { OBOGraph, OBOGraphsSchema } from  "./schema";
+import { OBOGraph, OBOGraphsSchema } from "./schema";
 import Graph, { GraphNode } from "../../graph";
-import GraphLoader from "../"
+import GraphLoader from "../";
 
 const parentProperties: Record<string, string> = {
   is_a: "rdfs:subClassOf",
@@ -10,17 +10,22 @@ const parentProperties: Record<string, string> = {
 type OBOGraphNode = GraphNode & {
   meta?: OBOGraph["meta"];
   edges: OBOGraph["edges"];
-}
+};
 
-export default class OBOGraphLoader extends GraphLoader<OBOGraph, OBOGraphNode> {
+export default class OBOGraphLoader extends GraphLoader<
+  OBOGraph,
+  OBOGraphNode
+> {
   parseGraph(graph: OBOGraph) {
     const terms: Map<string, OBOGraphNode> = new Map();
 
     for (const node of graph.nodes) {
       if (node.type !== "CLASS") continue;
 
-      const bpvs = node.meta?.basicPropertyValues || []
-      const replaced = !!bpvs.some(({ pred }) => pred === "http://purl.obolibrary.org/obo/IAO_0100001")
+      const bpvs = node.meta?.basicPropertyValues || [];
+      const replaced = !!bpvs.some(
+        ({ pred }) => pred === "http://purl.obolibrary.org/obo/IAO_0100001",
+      );
 
       if (replaced) continue;
 
@@ -46,7 +51,7 @@ export default class OBOGraphLoader extends GraphLoader<OBOGraph, OBOGraphNode> 
 
         parents[predID]!.push(edge.obj);
       } else if (terms.has(edge.sub)) {
-        terms.get(edge.sub)!.edges.push(edge)
+        terms.get(edge.sub)!.edges.push(edge);
       }
     }
 
@@ -54,15 +59,15 @@ export default class OBOGraphLoader extends GraphLoader<OBOGraph, OBOGraphNode> 
   }
 
   loadGraphFromString(str: string) {
-    const result = OBOGraphsSchema.safeParse(JSON.parse(str))
+    const result = OBOGraphsSchema.safeParse(JSON.parse(str));
 
     if (!result.success) {
-      console.log(result.error.issues)
-      throw Error()
+      console.log(result.error.issues);
+      throw Error();
     }
 
     const graph = result.data.graphs[0]!;
 
-    return graph
+    return graph;
   }
 }

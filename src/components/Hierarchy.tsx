@@ -1,5 +1,5 @@
 import { useState, useEffect } from "preact/hooks";
-import { Hierarchy, GraphNode } from "../graph"
+import { Hierarchy, GraphNode } from "../graph";
 
 type HierarchyTreeProps<T extends GraphNode = GraphNode> = {
   hierarchy: Hierarchy<T>;
@@ -56,7 +56,7 @@ function drawPathFor(
 }
 
 export default function HierarchyTree(props: HierarchyTreeProps) {
-  const { hierarchy, preferredPaths, itemURI } = props
+  const { hierarchy, preferredPaths, itemURI } = props;
   const [usePreferredPaths, setUsePreferredPaths] = useState(false);
   const [expandPaths, setExpandPaths] = useState<Set<string>>(new Set());
   const [showRelations, setShowRelations] = useState(false);
@@ -72,81 +72,81 @@ export default function HierarchyTree(props: HierarchyTreeProps) {
     expandPaths: expandPaths.size > 0 ? [...expandPaths] : undefined,
   });
 
-  const [selectedPath, setSelectedPath] = useState<string>(items[0]!.path)
+  const [selectedPath, setSelectedPath] = useState<string>(items[0]!.path);
 
   useEffect(() => {
-    const uri = selectedPath.split("-").pop()!
+    const uri = selectedPath.split("-").pop()!;
     if (props.onSelectNode) {
-      props.onSelectNode(hierarchy.getItem(uri))
+      props.onSelectNode(hierarchy.getItem(uri));
     }
-  }, [selectedPath])
+  }, [selectedPath]);
 
   const expandPath = (path: string) => {
-    setExpandPaths(prev => new Set([...prev, path]))
-  }
+    setExpandPaths(prev => new Set([...prev, path]));
+  };
 
   const unexpandPath = (path: string) => {
     setExpandPaths(prev => {
       const next = [...prev].filter(_path => {
-        return !(_path.startsWith(path))
-      })
+        return !_path.startsWith(path);
+      });
 
       if (selectedPath.startsWith(path) && selectedPath !== path) {
-        setSelectedPath(path)
+        setSelectedPath(path);
       }
 
-      return new Set(next)
-    })
-  }
+      return new Set(next);
+    });
+  };
 
   const togglePathExpansion = (path: string) => {
     if (expandPaths.has(path)) {
-      unexpandPath(path)
+      unexpandPath(path);
     } else {
-      expandPath(path)
+      expandPath(path);
     }
-  }
+  };
 
   return (
     <div
       tabIndex={0}
-      onKeyDown={(e) => {
-        const curIdx = items.findIndex(({ path }) => path === selectedPath)
-        const curItem = items[curIdx]
+      onKeyDown={e => {
+        const curIdx = items.findIndex(({ path }) => path === selectedPath);
+        const curItem = items[curIdx];
 
         if (e.key === "ArrowDown") {
           e.preventDefault();
           if (curIdx !== -1) {
             const nextIdx = curIdx + 1;
-            const nextItem = items[nextIdx]
+            const nextItem = items[nextIdx];
             if (nextItem) {
-              setSelectedPath(nextItem.path)
+              setSelectedPath(nextItem.path);
             }
           }
         } else if (e.key === "ArrowUp") {
           e.preventDefault();
           if (curIdx > 0) {
             const nextIdx = curIdx - 1;
-            const nextItem = items[nextIdx]
+            const nextItem = items[nextIdx];
             if (nextItem) {
-              setSelectedPath(nextItem.path)
+              setSelectedPath(nextItem.path);
             }
           }
         } else if (e.key === "ArrowRight") {
           e.preventDefault();
           if (curItem) {
-            expandPath(curItem.path)
+            expandPath(curItem.path);
           }
         } else if (e.key === "ArrowLeft") {
           e.preventDefault();
           if (curItem) {
             if (expandPaths.has(curItem.path)) {
-              unexpandPath(curItem.path)
+              unexpandPath(curItem.path);
             } else {
               // Select previous level in hierarchy
               for (let i = curIdx; i >= 0; i--) {
                 if (items[i]?.depth === curItem.depth - 1) {
-                  setSelectedPath(items[i]!.path)
+                  setSelectedPath(items[i]!.path);
                   break;
                 }
               }
@@ -196,10 +196,7 @@ export default function HierarchyTree(props: HierarchyTreeProps) {
                 key={item.uri}
               >
                 {selectedPath !== path ? null : (
-                  <text
-                    x={-28}
-                    stroke="red"
-                  >
+                  <text x={-28} stroke="red">
                     {SELECTION_MARKER}
                   </text>
                 )}
@@ -208,13 +205,13 @@ export default function HierarchyTree(props: HierarchyTreeProps) {
                     cursor: "pointer",
                     userSelect: "none",
                   }}
-                  onMouseDown={(e) => {
+                  onMouseDown={e => {
                     if (e.detail === 1) {
                       // Single click: Select node
                       setSelectedPath(path);
                     } else if (e.detail === 2) {
                       // Double click: Expand hierarchy
-                      togglePathExpansion(path)
+                      togglePathExpansion(path);
                     }
                   }}
                   transform={
@@ -245,14 +242,15 @@ export default function HierarchyTree(props: HierarchyTreeProps) {
                 />
 
                 <g>
-                  {hierarchy.graph.childrenByURI[item.uri]!.length === 0 ? null : (
+                  {hierarchy.graph.childrenByURI[item.uri]!.length ===
+                  0 ? null : (
                     <rect
                       x={-14}
                       y={-d.tree.itemHeight / 2}
                       width={10}
                       height={10}
                       onClick={() => {
-                        togglePathExpansion(path)
+                        togglePathExpansion(path);
                       }}
                       fill={expandPaths.has(path) ? "#ccc" : "white"}
                       fill-opacity={0.9}

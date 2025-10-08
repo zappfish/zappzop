@@ -103,10 +103,11 @@ export default class Graph<T extends GraphNode> {
       }
     }
 
-    const roots = nodes.filter(item => (
-      parentsByURI[item.uri]!.length === 0 &&
-      childrenByURI[item.uri]!.length > 0
-    ));
+    const roots = nodes.filter(
+      item =>
+        parentsByURI[item.uri]!.length === 0 &&
+        childrenByURI[item.uri]!.length > 0,
+    );
 
     this.roots = roots;
     this.nodes = nodes;
@@ -131,18 +132,18 @@ export default class Graph<T extends GraphNode> {
   }
 
   getHierarchy(rootURI: string) {
-    const item = this.getItem(rootURI)
-    return new Hierarchy(item, this)
+    const item = this.getItem(rootURI);
+    return new Hierarchy(item, this);
   }
 
   getRootHierarchies() {
-    const ret: Map<string, Hierarchy<T>> = new Map()
+    const ret: Map<string, Hierarchy<T>> = new Map();
 
     this.roots.forEach(root => {
-      ret.set(root.uri, this.getHierarchy(root.uri))
-    })
+      ret.set(root.uri, this.getHierarchy(root.uri));
+    });
 
-    return ret
+    return ret;
   }
 
   getItem(uri: string) {
@@ -201,7 +202,9 @@ export class Hierarchy<T extends GraphNode> {
   constructor(root: T, graph: Graph<T>) {
     this.root = root;
     this.graph = graph;
-    this.nodesByURI = Object.fromEntries(this.items().map(node => [node.uri, node]))
+    this.nodesByURI = Object.fromEntries(
+      this.items().map(node => [node.uri, node]),
+    );
   }
 
   getItem(uri: string) {
@@ -214,7 +217,7 @@ export class Hierarchy<T extends GraphNode> {
   }
 
   items() {
-    return [this.root, ...this.graph.findAllChildren(this.root)]
+    return [this.root, ...this.graph.findAllChildren(this.root)];
   }
 
   getTreeURIsForItem(item: T) {

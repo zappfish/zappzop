@@ -59,16 +59,13 @@ t.test("build a hierarchy", t => {
   const g = new Graph(nodes);
 
   t.match(g.getHierarchy("ex:A").items(), [
-    { uri: 'ex:A' },
-    { uri: 'ex:B' },
-    { uri: 'ex:C' },
-    { uri: 'ex:D' },
-  ])
+    { uri: "ex:A" },
+    { uri: "ex:B" },
+    { uri: "ex:C" },
+    { uri: "ex:D" },
+  ]);
 
-  t.match(g.getHierarchy("ex:C").items(), [
-    { uri: 'ex:C' },
-    { uri: 'ex:D' },
-  ])
+  t.match(g.getHierarchy("ex:C").items(), [{ uri: "ex:C" }, { uri: "ex:D" }]);
 
   t.end();
 });
@@ -91,7 +88,7 @@ t.test("build a flat tree with one level manually expanded", t => {
   const leaf = o.getItem("ex:D");
   const tree = o.getHierarchy("ex:A").buildFlatTree(leaf, {
     expandPaths: ["ex:A"],
-  })
+  });
 
   t.match(tree, [
     {
