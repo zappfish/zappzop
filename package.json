@@ -1,6 +1,6 @@
 {
   "name": "zapp-hierarchy-browser",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Component to browse a hierarchical ontology.",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
