@@ -7,7 +7,7 @@ const parentProperties: Record<string, string> = {
   "http://purl.obolibrary.org/obo/BFO_0000050": "BFO:0000050",
 };
 
-type OBOGraphNode = GraphNode & {
+export type OBOGraphNode = GraphNode & {
   meta?: OBOGraph["meta"];
   edges: OBOGraph["edges"];
 };
