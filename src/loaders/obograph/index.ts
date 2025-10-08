@@ -9,6 +9,7 @@ const parentProperties: Record<string, string> = {
 
 type OBOGraphNode = GraphNode & {
   meta?: OBOGraph["meta"];
+  edges: OBOGraph["edges"];
 }
 
 export default class OBOGraphLoader extends GraphLoader<OBOGraph, OBOGraphNode> {
@@ -29,6 +30,7 @@ export default class OBOGraphLoader extends GraphLoader<OBOGraph, OBOGraphNode> 
         parents: {},
         children: {},
         meta: node.meta,
+        edges: [],
       });
     }
 
@@ -43,6 +45,8 @@ export default class OBOGraphLoader extends GraphLoader<OBOGraph, OBOGraphNode> 
         }
 
         parents[predID]!.push(edge.obj);
+      } else if (terms.has(edge.sub)) {
+        terms.get(edge.sub)!.edges.push(edge)
       }
     }
 
