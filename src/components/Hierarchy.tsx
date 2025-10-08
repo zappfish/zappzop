@@ -6,17 +6,22 @@ type HierarchyTreeProps<T extends GraphNode = GraphNode> = {
   rootURI: string;
   itemURI: string;
   preferredPaths?: Array<string>;
+  width?: number;
+  onSelectNode?: (node: T) => void;
 };
 
 const d = {
+  width: 1000,
   paddingTop: 20,
   paddingBottom: 20,
-  paddingLeft: 20,
+  paddingLeft: 40,
   tree: {
     itemHeight: 20,
     depthIndent: 20,
   },
 };
+
+const SELECTION_MARKER = ">";
 
 function drawPathFor(
   items: ReturnType<typeof Hierarchy.prototype.buildFlatTree>,
@@ -53,22 +58,103 @@ function drawPathFor(
 export default function HierarchyTree(props: HierarchyTreeProps) {
   const { hierarchy, preferredPaths, itemURI } = props
   const [usePreferredPaths, setUsePreferredPaths] = useState(false);
-  const [expandPaths, setExpandPaths] = useState<Array<string>>([]);
+  const [expandPaths, setExpandPaths] = useState<Set<string>>(new Set());
   const [showRelations, setShowRelations] = useState(false);
 
   useEffect(() => {
-    setExpandPaths([]);
+    setExpandPaths(new Set());
   }, [itemURI]);
 
   const root = hierarchy.root;
   const item = hierarchy.getItem(itemURI);
   const items = hierarchy.buildFlatTree(item, {
     preferredPaths: usePreferredPaths ? preferredPaths : undefined,
-    expandPaths: expandPaths.length ? expandPaths : undefined,
+    expandPaths: expandPaths.size > 0 ? [...expandPaths] : undefined,
   });
 
+  const [selectedPath, setSelectedPath] = useState<string>(items[0]!.path)
+
+  useEffect(() => {
+    const uri = selectedPath.split("-").pop()!
+    if (props.onSelectNode) {
+      props.onSelectNode(hierarchy.getItem(uri))
+    }
+  }, [selectedPath])
+
+  const expandPath = (path: string) => {
+    setExpandPaths(prev => new Set([...prev, path]))
+  }
+
+  const unexpandPath = (path: string) => {
+    setExpandPaths(prev => {
+      const next = [...prev].filter(_path => {
+        return !(_path.startsWith(path))
+      })
+
+      if (selectedPath.startsWith(path) && selectedPath !== path) {
+        setSelectedPath(path)
+      }
+
+      return new Set(next)
+    })
+  }
+
+  const togglePathExpansion = (path: string) => {
+    if (expandPaths.has(path)) {
+      unexpandPath(path)
+    } else {
+      expandPath(path)
+    }
+  }
+
   return (
-    <div>
+    <div
+      tabIndex={0}
+      onKeyDown={(e) => {
+        const curIdx = items.findIndex(({ path }) => path === selectedPath)
+        const curItem = items[curIdx]
+
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          if (curIdx !== -1) {
+            const nextIdx = curIdx + 1;
+            const nextItem = items[nextIdx]
+            if (nextItem) {
+              setSelectedPath(nextItem.path)
+            }
+          }
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          if (curIdx > 0) {
+            const nextIdx = curIdx - 1;
+            const nextItem = items[nextIdx]
+            if (nextItem) {
+              setSelectedPath(nextItem.path)
+            }
+          }
+        } else if (e.key === "ArrowRight") {
+          e.preventDefault();
+          if (curItem) {
+            expandPath(curItem.path)
+          }
+        } else if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          if (curItem) {
+            if (expandPaths.has(curItem.path)) {
+              unexpandPath(curItem.path)
+            } else {
+              // Select previous level in hierarchy
+              for (let i = curIdx; i >= 0; i--) {
+                if (items[i]?.depth === curItem.depth - 1) {
+                  setSelectedPath(items[i]!.path)
+                  break;
+                }
+              }
+            }
+          }
+        }
+      }}
+    >
       <div>
         <label>
           <input
@@ -101,7 +187,7 @@ export default function HierarchyTree(props: HierarchyTreeProps) {
           height={
             items.length * d.tree.itemHeight + d.paddingTop + d.paddingBottom
           }
-          width={1000}
+          width={props.width || d.width}
         >
           <g transform={`translate(${d.paddingLeft}, ${d.paddingTop})`}>
             {items.map(({ item, depth, relToParent, path }, i) => (
@@ -109,7 +195,28 @@ export default function HierarchyTree(props: HierarchyTreeProps) {
                 transform={`translate(${depth * d.tree.depthIndent}, ${i * d.tree.itemHeight})`}
                 key={item.uri}
               >
+                {selectedPath !== path ? null : (
+                  <text
+                    x={-28}
+                    stroke="red"
+                  >
+                    {SELECTION_MARKER}
+                  </text>
+                )}
                 <text
+                  style={{
+                    cursor: "pointer",
+                    userSelect: "none",
+                  }}
+                  onMouseDown={(e) => {
+                    if (e.detail === 1) {
+                      // Single click: Select node
+                      setSelectedPath(path);
+                    } else if (e.detail === 2) {
+                      // Double click: Expand hierarchy
+                      togglePathExpansion(path)
+                    }
+                  }}
                   transform={
                     item.uri !== root.uri ? undefined : "translate(12, 0)"
                   }
@@ -145,13 +252,9 @@ export default function HierarchyTree(props: HierarchyTreeProps) {
                       width={10}
                       height={10}
                       onClick={() => {
-                        if (expandPaths.includes(path)) {
-                          setExpandPaths(prev => prev.filter(p => p !== path));
-                        } else {
-                          setExpandPaths(prev => [...prev, path]);
-                        }
+                        togglePathExpansion(path)
                       }}
-                      fill={expandPaths.includes(path) ? "#ccc" : "white"}
+                      fill={expandPaths.has(path) ? "#ccc" : "white"}
                       fill-opacity={0.9}
                       stroke="black"
                       strokeWidth={1}
