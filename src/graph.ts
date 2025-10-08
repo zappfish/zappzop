@@ -18,6 +18,18 @@ type FlatTreeOptions = {
   expandPaths?: Array<string>;
 };
 
+// FIXME: this is a horrible name, and it should go somewhere else
+export function graphLabelSort(a: GraphNode, b: GraphNode) {
+  const aLabel = a.label;
+  const bLabel = b.label;
+
+  if (aLabel === bLabel) return 0;
+  if (!aLabel) return -1;
+  if (!bLabel) return 1;
+
+  return aLabel.localeCompare(bLabel);
+}
+
 export default class Graph<T extends GraphNode> {
   roots: Array<T>;
   nodes: Array<T>;
@@ -151,7 +163,9 @@ export default class Graph<T extends GraphNode> {
         parents.push(item);
       },
       getChildren: node =>
-        this.parentsByURI[node.uri]!.map(rel => this.getItem(rel.to)),
+        this.parentsByURI[node.uri]!.map(rel => this.getItem(rel.to)).sort(
+          graphLabelSort,
+        ),
     });
 
     parents.shift();
@@ -168,7 +182,9 @@ export default class Graph<T extends GraphNode> {
         children.push(item);
       },
       getChildren: node =>
-        this.childrenByURI[node.uri]!.map(rel => this.getItem(rel.to)),
+        this.childrenByURI[node.uri]!.map(rel => this.getItem(rel.to)).sort(
+          graphLabelSort,
+        ),
     });
 
     children.shift();
@@ -286,6 +302,8 @@ export class Hierarchy<T extends GraphNode> {
             manuallyAdded,
           });
         }
+
+        children.sort((a, b) => graphLabelSort(a.item, b.item));
 
         return children;
       },
