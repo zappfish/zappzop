@@ -1,5 +1,5 @@
 import lunr from "lunr";
-import { useState, useEffect } from "preact/hooks";
+import { useState, useEffect } from "react";
 import HierarchyItem from "./Term";
 import zfa from "../zfa";
 

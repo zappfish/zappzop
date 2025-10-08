@@ -1,4 +1,4 @@
-import { useState, useEffect } from "preact/hooks";
+import { useState, useEffect } from "react";
 import { Hierarchy, GraphNode } from "../graph";
 
 type HierarchyTreeProps<T extends GraphNode = GraphNode> = {

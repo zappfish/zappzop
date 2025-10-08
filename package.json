@@ -2,31 +2,36 @@
   "name": "zapp-hierarchy-browser",
   "version": "1.0.0",
   "description": "Component to browse a hierarchical ontology.",
-  "main": "index.js",
+  "main": "src/index.tsx",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "sourceType": "module",
+  "type": "module",
   "author": "Patrick Golden",
   "license": "BSD-3-Clause",
   "dependencies": {
-    "esbuild": "^0.25.2",
     "lunr": "^2.3.9",
-    "preact": "^10.26.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "treeverse": "^3.0.0",
     "zod": "^4.0.17"
   },
   "devDependencies": {
     "@eslint/js": "^9.24.0",
     "@types/lunr": "^2.3.7",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.1",
     "@types/treeverse": "^3.0.5",
     "@typescript-eslint/eslint-plugin": "^8.29.0",
     "@typescript-eslint/parser": "^8.29.0",
+    "@vitejs/plugin-react": "^5.0.4",
     "eslint": "^9.24.0",
     "globals": "^16.0.0",
     "prettier": "^3.5.3",
-    "tap": "^21.1.0",
     "tsx": "^4.19.3",
-    "typescript-eslint": "^8.30.1"
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.30.1",
+    "vite": "^7.1.9",
+    "vitest": "^3.2.4"
   }
 }

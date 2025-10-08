@@ -1,10 +1,7 @@
 NPM_BIN := node_modules/.bin
-ESBUILD := $(NPM_BIN)/esbuild
+VITE := $(NPM_BIN)/vite
 
 TS_ENTRY := src/index.ts
-OUTPUT_DIR := dist
-
-ESBUILD_OPTIONS := $(TS_ENTRY) --bundle --outdir=$(OUTPUT_DIR) --jsx=automatic --jsx-dev
 
 .PHONY: all
 all:
@@ -15,7 +12,7 @@ clean:
 
 .PHONY: test
 test:
-	$(NPM_BIN)/tap --disable-coverage tests
+	$(NPM_BIN)/vitest run
 
 .PHONY: lint
 lint:
@@ -28,8 +25,8 @@ format:
 
 .PHONY: build
 build:
-	$(ESBUILD) $(ESBUILD_OPTIONS)
+	$(VITE)
 
 .PHONY: serve
 serve:
-	$(ESBUILD) $(ESBUILD_OPTIONS) --sourcemap --servedir=.
+	$(ESBUILD) serve
