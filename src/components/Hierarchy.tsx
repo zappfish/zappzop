@@ -193,7 +193,7 @@ export default function HierarchyTree(props: HierarchyTreeProps) {
             {items.map(({ item, depth, relToParent, path }, i) => (
               <g
                 transform={`translate(${depth * d.tree.depthIndent}, ${i * d.tree.itemHeight})`}
-                key={item.uri}
+                key={path}
               >
                 {selectedPath !== path ? null : (
                   <text x={-28} stroke="red">
