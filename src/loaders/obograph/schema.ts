@@ -6,7 +6,7 @@ export const OBOMeta = z.object({
       val: z.string(),
       pred: z.optional(z.string()),
       xrefs: z.optional(z.array(z.string())),
-      get meta() {
+      get meta(): z.ZodOptional<typeof OBOMeta> {
         return z.optional(OBOMeta);
       },
     }),
@@ -20,7 +20,7 @@ export const OBOMeta = z.object({
         pred: z.optional(z.string()),
         val: z.string(),
         xrefs: z.optional(z.array(z.string())),
-        get meta() {
+        get meta(): z.ZodOptional<typeof OBOMeta> {
           return z.optional(OBOMeta);
         },
       }),
@@ -33,7 +33,7 @@ export const OBOMeta = z.object({
         pred: z.optional(z.string()),
         val: z.string(),
         xrefs: z.optional(z.array(z.string())),
-        get meta() {
+        get meta(): z.ZodOptional<typeof OBOMeta> {
           return z.optional(OBOMeta);
         },
       }),
@@ -45,7 +45,7 @@ export const OBOMeta = z.object({
         pred: z.string(),
         val: z.string(),
         xrefs: z.optional(z.array(z.string())),
-        get meta() {
+        get meta(): z.ZodOptional<typeof OBOMeta> {
           return z.optional(OBOMeta);
         },
       }),

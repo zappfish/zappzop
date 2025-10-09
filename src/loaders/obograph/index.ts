@@ -58,7 +58,7 @@ export default class OBOGraphLoader extends GraphLoader<
     return new Graph([...terms.values()]);
   }
 
-  loadGraphFromString(str: string) {
+  loadGraphFromString(str: string): OBOGraph {
     const result = OBOGraphsSchema.safeParse(JSON.parse(str));
 
     if (!result.success) {
