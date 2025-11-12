@@ -30,8 +30,7 @@ function drawHierarchyPath(
 
   const dpr = window.devicePixelRatio || 1;
 
-  const cssHeight =
-    items.length * d.tree.itemHeight
+  const cssHeight = items.length * d.tree.itemHeight;
 
   el.style.width = "100%";
   el.style.height = `${cssHeight}px`;
@@ -260,7 +259,8 @@ export default function HierarchyTree<T extends GraphNode = GraphNode>(
                   width: "18px",
                 }}
               >
-                {hierarchy.graph.childrenByURI[item.uri]!.length === 0 ? null : (
+                {hierarchy.graph.childrenByURI[item.uri]!.length ===
+                0 ? null : (
                   <span
                     style={{
                       display: "inline-flex",

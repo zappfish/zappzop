@@ -12,15 +12,15 @@ export default class Search<T extends GraphNode> {
       fields: ["label", "synonyms", "definitions"],
       extractField: (doc, fieldName) => {
         if (fieldName === "synonyms" || fieldName === "definitions") {
-          return doc[fieldName].map(x => x.value).join(" ")
+          return doc[fieldName].map(x => x.value).join(" ");
         }
 
-        return doc[fieldName]
+        return doc[fieldName];
       },
-    })
+    });
   }
 
   buildIndex() {
-    this.miniSearch.addAll(this.items)
+    this.miniSearch.addAll(this.items);
   }
 }

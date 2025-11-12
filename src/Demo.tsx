@@ -12,10 +12,10 @@ async function main() {
 
   root.render(
     <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-        }}
+      style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+      }}
     >
       <div>
         {[...hierarchies.values()].map(hierarchy => (
@@ -25,15 +25,14 @@ async function main() {
             rootURI={hierarchy.root.uri}
             itemURI={hierarchy.root.uri}
             onSelectNode={node => {
-              node
+              node;
             }}
           />
         ))}
       </div>
 
-      <div id="phenotypes">
-      </div>
-    </div>
+      <div id="phenotypes"></div>
+    </div>,
   );
 }
 

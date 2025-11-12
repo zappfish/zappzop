@@ -20,8 +20,7 @@ export default function HierarchyTerm(props: HierarchyTermProps) {
     <span>
       <a href={href} onClick={handleClick}>
         {item.label}
-      </a>
-      {" "}
+      </a>{" "}
       ({item.zfin_usage} self)
     </span>
   );
