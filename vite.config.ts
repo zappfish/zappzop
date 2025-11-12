@@ -9,11 +9,8 @@ export default defineConfig({
       "@": "/src",
     },
   },
-  build: {
-    outDir: "demo-dist",
-  },
   test: {
-    include: ['tests/**/test_*.ts'],
+    include: ["tests/**/test_*.ts"],
     environment: "node",
   },
 });
