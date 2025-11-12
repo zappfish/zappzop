@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Hierarchy, GraphNode } from "../graph";
+import { takeWhile } from "../util";
 
 type HierarchyTreeProps<T extends GraphNode = GraphNode> = {
   hierarchy: Hierarchy<T>;
@@ -11,17 +12,72 @@ type HierarchyTreeProps<T extends GraphNode = GraphNode> = {
 };
 
 const d = {
-  width: 1000,
-  paddingTop: 20,
-  paddingBottom: 20,
-  paddingLeft: 40,
+  // width: 1000,
   tree: {
-    itemHeight: 20,
-    depthIndent: 20,
+    itemHeight: 24,
+    depthIndent: 16,
   },
 };
 
 const SELECTION_MARKER = ">";
+
+function drawHierarchyPath(
+  items: ReturnType<typeof Hierarchy.prototype.buildFlatTree>,
+  el: HTMLCanvasElement,
+) {
+  const ctx = el.getContext("2d");
+  if (!ctx) return;
+
+  const dpr = window.devicePixelRatio || 1;
+
+  const cssHeight =
+    items.length * d.tree.itemHeight
+
+  el.style.width = "100%";
+  el.style.height = `${cssHeight}px`;
+
+  const cssWidth = el.clientWidth;
+
+  el.width = cssWidth * dpr;
+  el.height = cssHeight * dpr;
+
+  ctx.scale(dpr, dpr);
+
+  ctx.clearRect(0, 0, cssWidth, cssHeight);
+  ctx.strokeStyle = "#666";
+  ctx.lineWidth = 1;
+  ctx.setLineDash([1, 1]);
+  ctx.beginPath();
+
+  items.forEach((originItem, i) => {
+    const childItems = takeWhile(
+      items.slice(i + 1),
+      item => item.depth > originItem.depth,
+    );
+
+    if (childItems.length === 0) return;
+
+    const x0 = originItem.depth * d.tree.depthIndent + 5;
+    const y0 = i * d.tree.itemHeight + d.tree.itemHeight / 2;
+
+    const lastDirectChildIdx =
+      childItems.findLastIndex(item => item.depth === originItem.depth + 1) + 1;
+    // Draw a line down to the last direct child
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(x0, y0 + lastDirectChildIdx * d.tree.itemHeight);
+
+    childItems.forEach((childItem, i) => {
+      if (childItem.depth === originItem.depth + 1) {
+        // Draw a tick
+        const tickWidth = d.tree.depthIndent;
+        const y = y0 + (i + 1) * d.tree.itemHeight;
+        ctx.moveTo(x0, y);
+        ctx.lineTo(x0 + tickWidth, y);
+      }
+    });
+  });
+  ctx.stroke();
+}
 
 function drawPathFor(
   items: ReturnType<typeof Hierarchy.prototype.buildFlatTree>,
@@ -55,11 +111,14 @@ function drawPathFor(
   return pathStr;
 }
 
-export default function HierarchyTree(props: HierarchyTreeProps) {
+export default function HierarchyTree<T extends GraphNode = GraphNode>(
+  props: HierarchyTreeProps<T>,
+) {
   const { hierarchy, preferredPaths, itemURI } = props;
   const [usePreferredPaths, setUsePreferredPaths] = useState(false);
   const [expandPaths, setExpandPaths] = useState<Set<string>>(new Set());
   const [showRelations, setShowRelations] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     setExpandPaths(new Set());
@@ -71,6 +130,12 @@ export default function HierarchyTree(props: HierarchyTreeProps) {
     preferredPaths: usePreferredPaths ? preferredPaths : undefined,
     expandPaths: expandPaths.size > 0 ? [...expandPaths] : undefined,
   });
+
+  useEffect(() => {
+    const canvasEl = canvasRef.current;
+    if (!canvasEl) return;
+    drawHierarchyPath(items, canvasEl);
+  }, [items]);
 
   const [selectedPath, setSelectedPath] = useState<string>(items[0]!.path);
 
@@ -155,114 +220,90 @@ export default function HierarchyTree(props: HierarchyTreeProps) {
         }
       }}
     >
-      <div>
-        <label>
-          <input
-            type="checkbox"
-            onChange={() => {
-              setShowRelations(prev => !prev);
-            }}
-          />
-          Show relations
-        </label>
-
-        <br />
-
-        <label>
-          <input
-            type="checkbox"
-            onChange={() => {
-              setUsePreferredPaths(prev => !prev);
-            }}
-          />
-          Use preferred paths
-        </label>
-      </div>
-
-      <div>
-        <svg
+      <div
+        style={{
+          position: "relative",
+          border: "1px solid #ccc",
+          width: props.width,
+        }}
+      >
+        <canvas
+          ref={canvasRef}
           style={{
-            border: "1px solid #ccc",
+            pointerEvents: "none",
+            position: "absolute",
+            top: 0,
+            left: 0,
           }}
-          height={
-            items.length * d.tree.itemHeight + d.paddingTop + d.paddingBottom
-          }
-          width={props.width || d.width}
-        >
-          <g transform={`translate(${d.paddingLeft}, ${d.paddingTop})`}>
-            {items.map(({ item, depth, relToParent, path }, i) => (
-              <g
-                transform={`translate(${depth * d.tree.depthIndent}, ${i * d.tree.itemHeight})`}
-                key={path}
+        />
+        <div style={{ position: "relative" }}>
+          {items.map(({ item, depth, relToParent, path }) => (
+            <div
+              key={path}
+              style={{
+                display: "flex",
+                alignItems: "center",
+
+                lineHeight: `${d.tree.itemHeight}px`,
+                height: `${d.tree.itemHeight}px`,
+
+                paddingLeft: `${depth * d.tree.depthIndent}px`,
+
+                userSelect: "none",
+                cursor: "pointer",
+              }}
+            >
+              <span
+                onClick={() => togglePathExpansion(path)}
+                style={{
+                  display: "inline-block",
+                  width: "18px",
+                }}
               >
-                {selectedPath !== path ? null : (
-                  <text x={-28} stroke="red">
-                    {SELECTION_MARKER}
-                  </text>
+                {hierarchy.graph.childrenByURI[item.uri]!.length === 0 ? null : (
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      width: 10,
+                      height: 10,
+                      border: "2px solid #666",
+                      background: expandPaths.has(path) ? "#ccc" : "#fff",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {expandPaths.has(path) ? "" : ""}
+                  </span>
                 )}
-                <text
-                  style={{
-                    cursor: "pointer",
-                    userSelect: "none",
-                  }}
-                  onMouseDown={e => {
-                    if (e.detail === 1) {
-                      // Single click: Select node
-                      setSelectedPath(path);
-                    } else if (e.detail === 2) {
-                      // Double click: Expand hierarchy
-                      togglePathExpansion(path);
-                    }
-                  }}
-                  transform={
-                    item.uri !== root.uri ? undefined : "translate(12, 0)"
+              </span>
+              <span
+                style={{
+                  flex: 1,
+
+                  overflow: "hidden",
+                  whiteSpace: "nowrap",
+                  textOverflow: "ellipsis",
+
+                  backgroundColor:
+                    selectedPath === path ? "#f0f0f0" : "transparent",
+                }}
+                title={itemURI}
+                onMouseDown={e => {
+                  if (e.detail === 1) {
+                    // Single click: Select node
+                    setSelectedPath(path);
+                  } else if (e.detail === 2) {
+                    // Double click: Expand hierarchy
+                    togglePathExpansion(path);
                   }
-                >
-                  <title>{item.uri}</title>
-                  {showRelations ? relToParent + " " : ""}
-                  {item.label}
-                </text>
-
-                {item.uri !== props.rootURI ? null : (
-                  <circle
-                    cx={5}
-                    cy={-d.tree.itemHeight / 4}
-                    r={3}
-                    fill={"red"}
-                  />
-                )}
-
-                <path
-                  d={drawPathFor(items, i)}
-                  transform={"translate(5, 5)"}
-                  fill={"none"}
-                  stroke={"#666"}
-                  stroke-width={1}
-                  stroke-dasharray={"1"}
-                />
-
-                <g>
-                  {hierarchy.graph.childrenByURI[item.uri]!.length ===
-                  0 ? null : (
-                    <rect
-                      x={-14}
-                      y={-d.tree.itemHeight / 2}
-                      width={10}
-                      height={10}
-                      onClick={() => {
-                        togglePathExpansion(path);
-                      }}
-                      fill={expandPaths.has(path) ? "#ccc" : "white"}
-                      fill-opacity={0.9}
-                      stroke="black"
-                      strokeWidth={1}
-                    />
-                  )}
-                </g>
-              </g>
-            ))}
-          </g>
-        </svg>
+                }}
+              >
+                {showRelations ? relToParent + " " : ""}
+                {item.label}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
