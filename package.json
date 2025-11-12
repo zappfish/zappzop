@@ -22,7 +22,7 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "tsup src/index.ts --dts --format esm,cjs --sourcemap --clean --external react,react-dom,zod",
+    "build": "tsup src/index.ts --dts --format esm,cjs --sourcemap --clean",
     "build:demo": "vite build",
     "dev": "vite",
     "preview": "vite preview",
@@ -38,6 +38,7 @@
   },
   "dependencies": {
     "lunr": "^2.3.9",
+    "minisearch": "^7.2.0",
     "treeverse": "^3.0.0"
   },
   "devDependencies": {

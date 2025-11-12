@@ -29,9 +29,16 @@ export default class OBOGraphLoader extends GraphLoader<
 
       if (replaced) continue;
 
+      const synonyms = node.meta?.synonyms || [];
+      const definition = node.meta?.definition;
+
       terms.set(node.id, {
         uri: node.id,
         label: node.lbl || node.id,
+        definitions: definition ? [{ value: definition.val }] : [],
+        synonyms: synonyms.map(syn => ({
+          value: syn.val,
+        })),
         parents: {},
         children: {},
         meta: node.meta,
