@@ -1,14 +1,13 @@
 NPM_BIN := node_modules/.bin
 VITE := $(NPM_BIN)/vite
 
-TS_ENTRY := src/index.ts
-
-.PHONY: all
-all:
+.PHONY: demo
+demo:
+	$(VITE)
 
 .PHONY: clean
 clean:
-	rm -rf $(OUTPUT_DIR)
+	rm -rf dist
 
 .PHONY: test
 test:
@@ -23,10 +22,4 @@ lint:
 format:
 	$(NPM_BIN)/prettier -w src tests
 
-.PHONY: build
-build:
-	$(VITE)
 
-.PHONY: serve
-serve:
-	$(ESBUILD) serve
