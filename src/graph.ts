@@ -134,7 +134,7 @@ export default class Graph<T extends GraphNode> {
   }
 
   items() {
-    return this.items;
+    return this.nodes;
   }
 
   getHierarchy(rootURI: string) {
@@ -204,12 +204,14 @@ export class Hierarchy<T extends GraphNode> {
   root: T;
   graph: Graph<T>;
   nodesByURI: Record<string, T>;
+  _items: Array<T>;
 
   constructor(root: T, graph: Graph<T>) {
     this.root = root;
     this.graph = graph;
+    this._items = [this.root, ...this.graph.findAllChildren(this.root)];
     this.nodesByURI = Object.fromEntries(
-      this.items().map(node => [node.uri, node]),
+      this._items.map(node => [node.uri, node]),
     );
   }
 
@@ -223,7 +225,7 @@ export class Hierarchy<T extends GraphNode> {
   }
 
   items() {
-    return [this.root, ...this.graph.findAllChildren(this.root)];
+    return this._items;
   }
 
   getTreeURIsForItem(item: T) {
