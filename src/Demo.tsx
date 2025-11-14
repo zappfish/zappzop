@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import HierarchyTree from "./components/Hierarchy";
+import TermSearch from "./components/Search";
 import OBOGraphLoader from "./loaders/obograph/index";
 
 async function main() {
@@ -11,28 +12,32 @@ async function main() {
   const hierarchies = graph.getRootHierarchies();
 
   root.render(
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-      }}
-    >
       <div>
         {[...hierarchies.values()].map(hierarchy => (
-          <HierarchyTree
-            key={hierarchy.root.uri}
-            hierarchy={hierarchy}
-            rootURI={hierarchy.root.uri}
-            itemURI={hierarchy.root.uri}
-            onSelectNode={node => {
-              node;
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
             }}
-          />
+          >
+            <HierarchyTree
+              key={hierarchy.root.uri}
+              hierarchy={hierarchy}
+              rootURI={hierarchy.root.uri}
+              itemURI={hierarchy.root.uri}
+              onSelectNode={node => {
+                node;
+              }}
+            />
+            <TermSearch
+              nodes={hierarchy.items()}
+              onSelectNode={node => {
+                node;
+              }}
+            />
+          </div>
         ))}
       </div>
-
-      <div id="phenotypes"></div>
-    </div>,
   );
 }
 
