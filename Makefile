@@ -2,8 +2,15 @@ NPM_BIN := node_modules/.bin
 VITE := $(NPM_BIN)/vite
 
 .PHONY: demo
-demo:
+demo: $(VITE)
+	$(VITE) build
+
+.PHONY: serve
+serve: $(VITE)
 	$(VITE)
+
+$(VITE):
+	npm ci
 
 .PHONY: clean
 clean:
