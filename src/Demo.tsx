@@ -12,32 +12,32 @@ async function main() {
   const hierarchies = graph.getRootHierarchies();
 
   root.render(
-      <div>
-        {[...hierarchies.values()].map(hierarchy => (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
+    <div>
+      {[...hierarchies.values()].map(hierarchy => (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+          }}
+        >
+          <HierarchyTree
+            key={hierarchy.root.uri}
+            hierarchy={hierarchy}
+            rootURI={hierarchy.root.uri}
+            itemURI={hierarchy.root.uri}
+            onSelectNode={node => {
+              node;
             }}
-          >
-            <HierarchyTree
-              key={hierarchy.root.uri}
-              hierarchy={hierarchy}
-              rootURI={hierarchy.root.uri}
-              itemURI={hierarchy.root.uri}
-              onSelectNode={node => {
-                node;
-              }}
-            />
-            <TermSearch
-              nodes={hierarchy.items()}
-              onSelectNode={node => {
-                node;
-              }}
-            />
-          </div>
-        ))}
-      </div>
+          />
+          <TermSearch
+            nodes={hierarchy.items()}
+            onSelectNode={node => {
+              node;
+            }}
+          />
+        </div>
+      ))}
+    </div>,
   );
 }
 

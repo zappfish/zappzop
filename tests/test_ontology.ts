@@ -87,15 +87,15 @@ describe("Hierarchy", () => {
   test("build a flat tree", () => {
     const o = new Graph(nodes);
 
-    expect(
-      o.getHierarchy("ex:A").buildFlatTree()
-    ).toMatchObject([
+    expect(o.getHierarchy("ex:A").buildFlatTree()).toMatchObject([
       { item: { uri: "ex:A" }, relToParent: null, depth: 0 },
-    ])
+    ]);
 
-    expect(o.getHierarchy("ex:A").buildFlatTree({
-      showNodes: [new Path(["ex:A", "ex:C", "ex:D"])],
-    })).toMatchObject([
+    expect(
+      o.getHierarchy("ex:A").buildFlatTree({
+        showNodes: [new Path(["ex:A", "ex:C", "ex:D"])],
+      }),
+    ).toMatchObject([
       { item: { uri: "ex:A" }, relToParent: null, depth: 0 },
       { item: { uri: "ex:C" }, relToParent: "rdfs:subClassOf", depth: 1 },
       { item: { uri: "ex:D" }, relToParent: "rdfs:subClassOf", depth: 2 },
@@ -104,6 +104,7 @@ describe("Hierarchy", () => {
 
   test("build a flat tree with one level manually expanded", () => {
     const o = new Graph(nodes);
+
     const tree = o.getHierarchy("ex:A").buildFlatTree({
       expandNodes: [new Path(["ex:A"])],
       showNodes: [new Path(["ex:A", "ex:C", "ex:D"])],

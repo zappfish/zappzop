@@ -4,7 +4,7 @@ import { GraphNode } from "./graph";
 
 export type SearchResultWithNode<T extends GraphNode> = SearchResult & {
   node: T;
-}
+};
 
 export default class SearchEngine<T extends GraphNode> {
   items: Array<T>;
@@ -29,13 +29,16 @@ export default class SearchEngine<T extends GraphNode> {
     });
   }
 
-  search(text: string, options?: SearchOptions): Array<SearchResultWithNode<T>> {
-    const results = this.miniSearch.search(text, options)
+  search(
+    text: string,
+    options?: SearchOptions,
+  ): Array<SearchResultWithNode<T>> {
+    const results = this.miniSearch.search(text, options);
 
     return results.map(res => ({
       ...res,
       node: this.itemsByURI.get(res.id)!,
-    }))
+    }));
   }
 
   buildIndex() {
@@ -50,14 +53,14 @@ export function useSearchEngine<T extends GraphNode>(items: Array<T>) {
     const engine = new SearchEngine(items);
     engine.buildIndex();
     engineRef.current = engine;
-  }
+  };
 
   if (engineRef.current === null) {
-    rebuild(items)
+    rebuild(items);
   }
 
   useEffect(() => {
-    rebuild(items)
+    rebuild(items);
   }, [items]);
 
   return { engine: engineRef.current! };

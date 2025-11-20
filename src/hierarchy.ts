@@ -73,7 +73,7 @@ export default class Hierarchy<T extends GraphNode> {
   }
 
   items() {
-    return [...this.nodesByURI.values()].sort(sortByLabel)
+    return [...this.nodesByURI.values()].sort(sortByLabel);
   }
 
   getPathsForNode(uri: string) {
