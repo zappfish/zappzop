@@ -1,17 +1,5 @@
 import treeverse from "treeverse";
-
-export type GraphNode = {
-  uri: string;
-  label: string | null;
-  synonyms: Array<{
-    value: string;
-  }>;
-  definitions: Array<{
-    value: string;
-  }>;
-  children: Record<string, Array<string>>;
-  parents: Record<string, Array<string>>;
-};
+import { GraphNode } from "./types";
 
 type Relation = {
   to: string;
@@ -20,8 +8,8 @@ type Relation = {
 };
 
 type FlatTreeOptions = {
-  preferredPaths?: Array<string>;
-  expandPaths?: Array<string>;
+  showNodes?: Path[];
+  expandNodes?: Path[];
 };
 
 // FIXME: this is a horrible name, and it should go somewhere else
@@ -40,7 +28,6 @@ export default class Graph<T extends GraphNode> {
   roots: Array<T>;
   nodes: Array<T>;
   nodesByURI: Record<string, T>;
-  // index: lunr.Index;
 
   childrenByURI: Record<string, Relation[]>;
   parentsByURI: Record<string, Relation[]>;
@@ -120,17 +107,6 @@ export default class Graph<T extends GraphNode> {
     this.nodesByURI = nodesByURI;
     this.parentsByURI = parentsByURI;
     this.childrenByURI = childrenByURI;
-
-    /*
-    this.index = lunr(builder => {
-      builder.ref("uri");
-      builder.field("label");
-
-      items.forEach(item => {
-        builder.add(item);
-      });
-    });
-    */
   }
 
   items() {
@@ -203,20 +179,58 @@ export default class Graph<T extends GraphNode> {
 export class Hierarchy<T extends GraphNode> {
   root: T;
   graph: Graph<T>;
-  nodesByURI: Record<string, T>;
-  _items: Array<T>;
+
+  nodesByURI: Map<string, T>;
+  nodesByPathKey: Map<string, T>;
+  pathsByURI: Map<string, Path[]>;
 
   constructor(root: T, graph: Graph<T>) {
     this.root = root;
     this.graph = graph;
-    this._items = [this.root, ...this.graph.findAllChildren(this.root)];
-    this.nodesByURI = Object.fromEntries(
-      this._items.map(node => [node.uri, node]),
-    );
+    this.nodesByURI = new Map()
+    this.nodesByPathKey = new Map();
+    this.pathsByURI = new Map();
+
+    // Precompute all indexes ahead of time. This consists of:
+    //   1. A map indexing nodes by URI
+    //   2. A map indexing nodes by path key
+    //   3. A map indexing paths by URI
+    treeverse.depth({
+      tree: {
+        item: this.root,
+        path: new Path([this.root.uri]),
+      },
+
+      visit: node => {
+        const { item, path } = node;
+
+        if (!this.pathsByURI.has(item.uri)) {
+          this.pathsByURI.set(item.uri, []);
+        }
+
+        this.nodesByURI.set(item.uri, item);
+        this.pathsByURI.get(item.uri)!.push(path);
+        this.nodesByPathKey.set(path.key, item);
+      },
+
+      getChildren: node => {
+        const { item, path } = node;
+        const childRels = this.graph.childrenByURI[item.uri] ?? [];
+
+        return childRels.map(rel => {
+          const child = this.graph.getItem(rel.to);
+
+          return {
+            item: child,
+            path: path.child(child.uri),
+          };
+        });
+      },
+    });
   }
 
   getItem(uri: string) {
-    const item = this.nodesByURI[uri];
+    const item = this.nodesByURI.get(uri);
 
     if (item === undefined) {
       throw new Error(`No item in hierarchy with URI ${uri}`);
@@ -225,101 +239,143 @@ export class Hierarchy<T extends GraphNode> {
   }
 
   items() {
-    return this._items;
+    return this.nodesByURI.values();
   }
 
-  getTreeURIsForItem(item: T) {
-    const uris = new Set([item.uri]);
-
-    if (!Object.hasOwn(this.nodesByURI, item.uri)) {
-      throw new Error(`No item in hierarchy with URI ${item.uri}`);
-    }
-
-    for (const node of this.graph.findAllParents(item)) {
-      uris.add(node.uri);
-      if (node === this.root) {
-        break;
-      }
-    }
-
-    return uris;
+  getPathsForNode(uri: string) {
+    return this.pathsByURI.get(uri) ?? [];
   }
 
-  buildFlatTree(leaf: T, opts?: FlatTreeOptions) {
-    type ItemWithDepth = {
+  getItemAtPath(path: Path) {
+    const item = this.nodesByPathKey.get(path.key);
+    if (!item) throw new Error(`No such path: ${path.key}`);
+    return item;
+  }
+
+  buildFlatTree(opts: FlatTreeOptions = {}) {
+    const showNodes = opts.showNodes ?? [];
+    const expandNodes = opts.expandNodes ?? [];
+
+    const showKeys = new Set(showNodes.map(p => p.key));
+    const expandKeys = new Set(expandNodes.map(p => p.key));
+
+    const rows: Array<{
       item: T;
       relToParent: string | null;
       depth: number;
-      path: string;
-      manuallyAdded: boolean;
-    };
-    const items: Array<ItemWithDepth> = [];
-    const treeURIs = this.getTreeURIsForItem(leaf);
-    const path: Array<string> = [];
+      path: Path;
+    }> = [];
 
-    treeverse.depth<ItemWithDepth, void, ItemWithDepth[]>({
+    const shouldExpandPath = (path: Path) => {
+      if (expandKeys.has(path.key)) return true;
+
+      if (expandNodes.some(expandPath => expandPath.hasAncestor(path)))
+        return true;
+
+      return false;
+    };
+
+    const shouldShowPath = (path: Path) => {
+      // Always show the root
+      if (path.depth() === 1) return true;
+
+      if (showKeys.has(path.key)) return true;
+
+      for (const expandPath of expandNodes) {
+        // This is an ancestor of an expanded node, or the expanded node itself
+        if (expandPath.hasAncestor(path)) return true;
+
+        // This is the direct child of an node to be expanded
+        if (path.parent()?.equals(expandPath)) return true;
+      }
+
+      return false;
+    };
+
+    treeverse.depth({
       tree: {
         item: this.root,
-        relToParent: null,
+        path: new Path([this.root.uri]),
         depth: 0,
-        path: this.root.uri,
-        manuallyAdded: false,
+        relToParent: null as null | string,
       },
+
       visit(node) {
-        items.push(node);
-        path.push(node.item.uri);
+        const { item, path, depth, relToParent } = node;
+
+        if (shouldShowPath(path)) {
+          rows.push({ item, path, depth, relToParent });
+        }
       },
-      leave() {
-        path.pop();
-      },
+
       getChildren: node => {
-        const children: ItemWithDepth[] = [];
-        const childRelations = this.graph.childrenByURI[node.item.uri]!;
+        const { item, path, depth } = node;
 
-        for (const rel of childRelations) {
-          let manuallyAdded = false;
+        if (!shouldExpandPath(path)) {
+          return [];
+        }
 
-          const pathStr = [...path, rel.to].join("-");
+        const childRels = this.graph.childrenByURI[item.uri] ?? [];
 
+        const children = childRels.map(rel => {
+          const item = this.graph.getItem(rel.to);
           const relPredicate = !rel.inverse
             ? `^${rel.predicate}`
             : rel.predicate;
 
-          if (opts?.expandPaths && opts.expandPaths.includes(path.join("-"))) {
-            if (!treeURIs.has(rel.to)) {
-              manuallyAdded = true;
-            }
-            // Great!
-          } else {
-            if (manuallyAdded) continue;
-            if (!treeURIs.has(rel.to)) continue;
-
-            if (opts?.preferredPaths) {
-              const inPreferredPath = opts.preferredPaths.some(
-                preferredPathStr =>
-                  preferredPathStr.startsWith(pathStr) ||
-                  pathStr.startsWith(preferredPathStr),
-              );
-
-              if (!inPreferredPath) continue;
-            }
-          }
-
-          children.push({
-            item: this.graph.getItem(rel.to),
+          return {
+            item,
+            path: path.child(item.uri),
+            depth: depth + 1,
             relToParent: relPredicate,
-            depth: node.depth + 1,
-            path: pathStr,
-            manuallyAdded,
-          });
-        }
+          }
+        });
 
-        children.sort((a, b) => graphLabelSort(a.item, b.item));
+        children.sort((a, b) => graphLabelSort(a.item, b.item))
 
         return children;
       },
     });
 
-    return items;
+    return rows;
+  }
+}
+
+export class Path {
+  steps: Array<string>;
+
+  constructor(steps: Array<string>) {
+    this.steps = steps;
+  }
+
+  get key() {
+    return JSON.stringify(this.steps);
+  }
+
+  static fromKey(k: string) {
+    return new Path(JSON.parse(k));
+  }
+
+  depth() {
+    return this.steps.length;
+  }
+
+  hasAncestor(other: Path) {
+    if (other.steps.length > this.steps.length) return false;
+    return other.steps.every((val, i) => val === this.steps[i]);
+  }
+
+  equals(other: Path) {
+    if (other.steps.length !== this.steps.length) return false;
+    return this.steps.every((v, i) => v === other.steps[i]);
+  }
+
+  parent(): Path | null {
+    if (this.steps.length <= 1) return null;
+    return new Path(this.steps.slice(0, -1));
+  }
+
+  child(uri: string): Path {
+    return new Path([...this.steps, uri]);
   }
 }
