@@ -69,23 +69,19 @@ describe("Hierarchy", () => {
   test("build a hierarchy", () => {
     const g = new Graph(nodes);
 
-    const fromA = g
-      .getHierarchy("ex:A")
-      .items()
-      .map(x => x.uri);
+    // TODO: This tests whether labels are in alphabetical order (by label) as
+    // well. Should it be so?
+    expect(g.getHierarchy("ex:A").items()).toMatchObject([
+      { uri: "ex:A" },
+      { uri: "ex:B" },
+      { uri: "ex:C" },
+      { uri: "ex:D" },
+    ]);
 
-    expect(fromA).toEqual(
-      expect.arrayContaining(["ex:A", "ex:B", "ex:C", "ex:D"]),
-    );
-
-    const fromC = g
-      .getHierarchy("ex:C")
-      .items()
-      .map(x => x.uri);
-
-    expect(fromC).toEqual(
-      expect.arrayContaining(["ex:C", "ex:D"]),
-    );
+    expect(g.getHierarchy("ex:C").items()).toMatchObject([
+      { uri: "ex:C" },
+      { uri: "ex:D" },
+    ]);
   });
 
   test("build a flat tree", () => {

@@ -3,23 +3,12 @@ import treeverse from "treeverse";
 import { GraphNode } from "./types";
 import Path from "./path";
 import Graph from "./graph";
+import { sortByLabel } from "./util";
 
 type FlatTreeOptions = {
   showNodes?: Path[];
   expandNodes?: Path[];
 };
-
-// FIXME: this is a horrible name, and it should go somewhere else
-export function graphLabelSort(a: GraphNode, b: GraphNode) {
-  const aLabel = a.label;
-  const bLabel = b.label;
-
-  if (aLabel === bLabel) return 0;
-  if (!aLabel) return -1;
-  if (!bLabel) return 1;
-
-  return aLabel.localeCompare(bLabel);
-}
 
 export default class Hierarchy<T extends GraphNode> {
   root: T;
@@ -84,7 +73,7 @@ export default class Hierarchy<T extends GraphNode> {
   }
 
   items() {
-    return [...this.nodesByURI.values()];
+    return [...this.nodesByURI.values()].sort(sortByLabel)
   }
 
   getPathsForNode(uri: string) {
@@ -179,7 +168,7 @@ export default class Hierarchy<T extends GraphNode> {
           };
         });
 
-        children.sort((a, b) => graphLabelSort(a.item, b.item));
+        children.sort((a, b) => sortByLabel(a.item, b.item));
 
         return children;
       },

@@ -1,6 +1,7 @@
 import treeverse from "treeverse";
 import { GraphNode } from "./types";
 import Hierarchy from "./hierarchy";
+import { sortByLabel } from "./util";
 
 type Relation = {
   to: string;
@@ -130,7 +131,9 @@ export default class Graph<T extends GraphNode> {
         parents.push(item);
       },
       getChildren: node =>
-        this.parentsByURI[node.uri]!.map(rel => this.getItem(rel.to)),
+        this.parentsByURI[node.uri]!.map(rel => this.getItem(rel.to)).sort(
+          sortByLabel,
+        ),
     });
 
     parents.shift();
@@ -147,7 +150,9 @@ export default class Graph<T extends GraphNode> {
         children.push(item);
       },
       getChildren: node =>
-        this.childrenByURI[node.uri]!.map(rel => this.getItem(rel.to)),
+        this.childrenByURI[node.uri]!.map(rel => this.getItem(rel.to)).sort(
+          sortByLabel,
+        ),
     });
 
     children.shift();
