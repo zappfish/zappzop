@@ -101,25 +101,38 @@ export default class Hierarchy<T extends GraphNode> {
     }> = [];
 
     const shouldExpandPath = (path: Path) => {
+      // This node should be expanded
       if (expandKeys.has(path.key)) return true;
 
-      if (showNodes.some(showPath => path.isAncestorOf(showPath)))
+      // This node is an ancestor of a shown path
+      if (showNodes.some(showPath => path.isAncestorOf(showPath))) return true;
+
+      // This node is an ancestor of an expanded path
+      if (expandNodes.some(expandPath => path.isAncestorOf(expandPath)))
         return true;
 
       return false;
     };
 
     const shouldShowPath = (path: Path) => {
+      const pathKey = path.key;
+
       // Always show the root
       if (path.depth() === 1) return true;
 
+      // This is an expanded node
+      if (expandKeys.has(pathKey)) return true;
+
+      // This is a shown node
+      if (showKeys.has(pathKey)) return true;
+
       for (const showPath of showNodes) {
-        // This is an ancestor of an shown node, or the shown node itself
+        // This is an ancestor of an shown node
         if (path.isAncestorOf(showPath)) return true;
       }
 
       for (const expandPath of expandNodes) {
-        // This is an ancestor of an expanded node, or the expanded node itself
+        // This is an ancestor of an expanded node
         if (path.isAncestorOf(expandPath)) return true;
 
         // This is the direct child of an node to be expanded
