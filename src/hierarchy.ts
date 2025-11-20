@@ -84,7 +84,7 @@ export default class Hierarchy<T extends GraphNode> {
   }
 
   items() {
-    return this.nodesByURI.values();
+    return [...this.nodesByURI.values()];
   }
 
   getPathsForNode(uri: string) {
@@ -114,7 +114,7 @@ export default class Hierarchy<T extends GraphNode> {
     const shouldExpandPath = (path: Path) => {
       if (expandKeys.has(path.key)) return true;
 
-      if (expandNodes.some(expandPath => expandPath.hasAncestor(path)))
+      if (showNodes.some(showPath => path.isAncestorOf(showPath)))
         return true;
 
       return false;
@@ -124,11 +124,14 @@ export default class Hierarchy<T extends GraphNode> {
       // Always show the root
       if (path.depth() === 1) return true;
 
-      if (showKeys.has(path.key)) return true;
+      for (const showPath of showNodes) {
+        // This is an ancestor of an shown node, or the shown node itself
+        if (path.isAncestorOf(showPath)) return true;
+      }
 
       for (const expandPath of expandNodes) {
         // This is an ancestor of an expanded node, or the expanded node itself
-        if (expandPath.hasAncestor(path)) return true;
+        if (path.isAncestorOf(expandPath)) return true;
 
         // This is the direct child of an node to be expanded
         if (path.parent()?.equals(expandPath)) return true;
