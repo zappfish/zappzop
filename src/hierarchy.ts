@@ -6,11 +6,11 @@ import Graph from "./graph";
 import { sortByLabel } from "./util";
 
 type FlatViewOptions = {
-  showNodes?: Array<Path>;
-  expandNodes?: Array<Path>;
+  showPaths?: Array<Path>;
+  expandPaths?: Array<Path>;
 };
 
-type HierarchyRow<T extends GraphNode> = {
+export type HierarchyRow<T extends GraphNode> = {
   item: T;
   relToParent: string | null;
   depth: number;
@@ -108,11 +108,11 @@ export default class Hierarchy<T extends GraphNode> {
   // Returns a one-dimensional array of HierarchyRow objects annotated by their
   // depth.
   projectFlatView(opts: FlatViewOptions = {}) {
-    const showNodes = opts.showNodes ?? [];
-    const expandNodes = opts.expandNodes ?? [];
+    const showPaths = opts.showPaths ?? [];
+    const expandPaths = opts.expandPaths ?? [];
 
-    const showKeys = new Set(showNodes.map(p => p.key));
-    const expandKeys = new Set(expandNodes.map(p => p.key));
+    const showKeys = new Set(showPaths.map(p => p.key));
+    const expandKeys = new Set(expandPaths.map(p => p.key));
 
     const rows: Array<HierarchyRow<T>> = [];
 
@@ -121,10 +121,10 @@ export default class Hierarchy<T extends GraphNode> {
       if (expandKeys.has(path.key)) return true;
 
       // This is an ancestor of a shown path-- iterate its children.
-      if (showNodes.some(showPath => path.isAncestorOf(showPath))) return true;
+      if (showPaths.some(showPath => path.isAncestorOf(showPath))) return true;
 
       // This node is an ancestor of an expanded path-- iterate its children.
-      if (expandNodes.some(expandPath => path.isAncestorOf(expandPath)))
+      if (expandPaths.some(expandPath => path.isAncestorOf(expandPath)))
         return true;
 
       return false;
@@ -142,12 +142,12 @@ export default class Hierarchy<T extends GraphNode> {
       // This is a shown node
       if (showKeys.has(pathKey)) return true;
 
-      for (const showPath of showNodes) {
+      for (const showPath of showPaths) {
         // This is an ancestor of an shown node
         if (path.isAncestorOf(showPath)) return true;
       }
 
-      for (const expandPath of expandNodes) {
+      for (const expandPath of expandPaths) {
         // This is an ancestor of an expanded node
         if (path.isAncestorOf(expandPath)) return true;
 

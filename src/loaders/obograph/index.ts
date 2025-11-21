@@ -1,5 +1,6 @@
 import { OBOGraph, OBOGraphsSchema } from "./schema";
-import Graph, { GraphNode } from "../../graph";
+import Graph from "../../graph";
+import { GraphNode } from "../../types";
 import GraphLoader from "../";
 
 const parentProperties: Record<string, string> = {

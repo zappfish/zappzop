@@ -1,17 +1,19 @@
 import React, { useState, useEffect, useRef, useImperativeHandle } from "react";
-import { Hierarchy, GraphNode } from "../graph";
+import Hierarchy, { HierarchyRow } from "../hierarchy";
+import Path from "../path";
+import { GraphNode } from "../types";
 import { takeWhile } from "../util";
 
 type HierarchyTreeProps<T extends GraphNode = GraphNode> = {
   hierarchy: Hierarchy<T>;
   rootURI: string;
-  itemURI: string;
+  itemURI?: string;
   preferredPaths?: Array<string>;
   width?: number;
   onSelectNode?: (node: T) => void;
 };
 
-type HierarchyTreeHandle = {
+export type HierarchyTreeHandle = {
   openAndFocusNode: (uri: string) => void;
 };
 
@@ -26,7 +28,7 @@ const d = {
 // const SELECTION_MARKER = ">";
 
 function drawHierarchyPath(
-  tree: ReturnType<typeof Hierarchy.prototype.buildFlatTree>,
+  tree: Array<HierarchyRow<GraphNode>>,
   el: HTMLCanvasElement,
 ) {
   const ctx = el.getContext("2d");
@@ -120,28 +122,50 @@ function HierarchyTree<T extends GraphNode = GraphNode>(
   props: HierarchyTreeProps<T>,
   ref: React.Ref<HierarchyTreeHandle>,
 ) {
-  const { hierarchy, preferredPaths, itemURI } = props;
+  const { hierarchy, itemURI } = props;
   const [expandPaths, setExpandPaths] = useState<Set<string>>(new Set());
+  const [showPaths, setShowPaths] = useState<Set<string>>(new Set());
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const [usePreferredPaths, setUsePreferredPaths] = useState(false);
+  /*
   const [showRelations, setShowRelations] = useState(false);
+   */
 
   useEffect(() => {
     setExpandPaths(new Set());
+
+    if (itemURI) {
+      const node = hierarchy.getNode(itemURI);
+      const paths = hierarchy.getPathsForNode(node);
+      setShowPaths(new Set(paths.map(path => path.key)));
+    }
   }, [itemURI]);
 
-  const item = hierarchy.getItem(itemURI);
+  const tree = hierarchy.projectFlatView({
+    showPaths: [...showPaths].map(key => Path.fromKey(key)),
+    expandPaths: [...expandPaths].map(key => Path.fromKey(key)),
+  });
+
+  /*
   const tree = hierarchy.buildFlatTree(item, {
     preferredPaths: usePreferredPaths ? preferredPaths : undefined,
     expandPaths: expandPaths.size > 0 ? [...expandPaths] : undefined,
   });
+   */
 
   useImperativeHandle(
     ref,
     () => ({
-      openAndFocusNode(uri: str) {
-        hierarchy.getTreeURIsForItem;
+      openAndFocusNode(uri: string) {
+        const node = hierarchy.getNode(uri);
+        const paths = hierarchy.getPathsForNode(node);
+        const parents = paths.map(p => p.parent()).filter(p => p !== null);
+
+        setExpandPaths(prev => new Set([...prev, ...parents.map(p => p.key)]));
+
+        setShowPaths(new Set([...paths.map(path => path.key)]));
+
+        setSelectedPath(paths[0]!);
       },
     }),
     [],
@@ -153,28 +177,38 @@ function HierarchyTree<T extends GraphNode = GraphNode>(
     drawHierarchyPath(tree, canvasEl);
   }, [tree]);
 
-  const [selectedPath, setSelectedPath] = useState<string>(tree[0]!.path);
+  const [selectedPath, setSelectedPath] = useState<Path>(tree[0]!.path);
 
   useEffect(() => {
-    const uri = selectedPath.split("-").pop()!;
+    const uri = selectedPath.leaf();
     if (props.onSelectNode) {
-      props.onSelectNode(hierarchy.getItem(uri));
+      props.onSelectNode(hierarchy.getNode(uri));
     }
   }, [selectedPath]);
 
-  const expandPath = (path: string) => {
-    setExpandPaths(prev => new Set([...prev, path]));
+  const expandPath = (pathKey: string) => {
+    setExpandPaths(prev => new Set([...prev, pathKey]));
   };
 
-  const unexpandPath = (path: string) => {
+  const unexpandPath = (pathKey: string) => {
+    const path = Path.fromKey(pathKey);
+
     setExpandPaths(prev => {
       const next = [...prev].filter(_path => {
-        return !_path.startsWith(path);
+        return !Path.fromKey(_path).startsWith(path);
       });
 
-      if (selectedPath.startsWith(path) && selectedPath !== path) {
+      if (selectedPath.startsWith(path) && !selectedPath.equals(path)) {
         setSelectedPath(path);
       }
+
+      return new Set(next);
+    });
+
+    setShowPaths(prev => {
+      const next = [...prev].filter(_path => {
+        return !Path.fromKey(_path).startsWith(path);
+      });
 
       return new Set(next);
     });
@@ -192,7 +226,7 @@ function HierarchyTree<T extends GraphNode = GraphNode>(
     <div
       tabIndex={0}
       onKeyDown={e => {
-        const curIdx = tree.findIndex(({ path }) => path === selectedPath);
+        const curIdx = tree.findIndex(({ path }) => path.equals(selectedPath));
         const curItem = tree[curIdx];
 
         if (e.key === "ArrowDown") {
@@ -216,13 +250,13 @@ function HierarchyTree<T extends GraphNode = GraphNode>(
         } else if (e.key === "ArrowRight") {
           e.preventDefault();
           if (curItem) {
-            expandPath(curItem.path);
+            expandPath(curItem.path.key);
           }
         } else if (e.key === "ArrowLeft") {
           e.preventDefault();
           if (curItem) {
-            if (expandPaths.has(curItem.path)) {
-              unexpandPath(curItem.path);
+            if (expandPaths.has(curItem.path.key)) {
+              unexpandPath(curItem.path.key);
             } else {
               // Select previous level in hierarchy
               for (let i = curIdx; i >= 0; i--) {
@@ -253,9 +287,9 @@ function HierarchyTree<T extends GraphNode = GraphNode>(
           }}
         />
         <div style={{ position: "relative" }}>
-          {tree.map(({ item, depth, relToParent, path }) => (
+          {tree.map(({ item, depth, path }) => (
             <div
-              key={path}
+              key={path.key}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -270,7 +304,7 @@ function HierarchyTree<T extends GraphNode = GraphNode>(
               }}
             >
               <span
-                onClick={() => togglePathExpansion(path)}
+                onClick={() => togglePathExpansion(path.key)}
                 style={{
                   display: "inline-block",
                   width: "18px",
@@ -284,12 +318,12 @@ function HierarchyTree<T extends GraphNode = GraphNode>(
                       width: 10,
                       height: 10,
                       border: "2px solid #666",
-                      background: expandPaths.has(path) ? "#ccc" : "#fff",
+                      background: expandPaths.has(path.key) ? "#ccc" : "#fff",
                       alignItems: "center",
                       justifyContent: "center",
                     }}
                   >
-                    {expandPaths.has(path) ? "" : ""}
+                    {expandPaths.has(path.key) ? "" : ""}
                   </span>
                 )}
               </span>
@@ -301,8 +335,9 @@ function HierarchyTree<T extends GraphNode = GraphNode>(
                   whiteSpace: "nowrap",
                   textOverflow: "ellipsis",
 
-                  backgroundColor:
-                    selectedPath === path ? "#f0f0f0" : "transparent",
+                  backgroundColor: selectedPath.equals(path)
+                    ? "#f0f0f0"
+                    : "transparent",
                 }}
                 title={itemURI}
                 onMouseDown={e => {
@@ -311,11 +346,11 @@ function HierarchyTree<T extends GraphNode = GraphNode>(
                     setSelectedPath(path);
                   } else if (e.detail === 2) {
                     // Double click: Expand hierarchy
-                    togglePathExpansion(path);
+                    togglePathExpansion(path.key);
                   }
                 }}
               >
-                {showRelations ? relToParent + " " : ""}
+                {/* showRelations ? relToParent + " " : "" */}
                 {item.label}
               </span>
             </div>

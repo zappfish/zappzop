@@ -3,6 +3,10 @@ export default class Path {
 
   constructor(steps: Array<string>) {
     this.steps = steps;
+
+    if (this.steps.length === 0) {
+      throw new Error("Cannot create an empty path.");
+    }
   }
 
   get key() {
@@ -38,5 +42,9 @@ export default class Path {
 
   child(uri: string): Path {
     return new Path([...this.steps, uri]);
+  }
+
+  leaf() {
+    return this.steps.at(-1)!;
   }
 }

@@ -1,7 +1,44 @@
+import { useRef } from "react";
 import { createRoot } from "react-dom/client";
-import HierarchyTree from "./components/Hierarchy";
+import HierarchyTree, { HierarchyTreeHandle } from "./components/Hierarchy";
 import TermSearch from "./components/Search";
-import OBOGraphLoader from "./loaders/obograph/index";
+import OBOGraphLoader, { OBOGraphNode } from "./loaders/obograph/index";
+import Hierarchy from "./hierarchy";
+
+type RenderedHierarchyProps = {
+  hierarchy: Hierarchy<OBOGraphNode>;
+};
+
+function RenderedHierarchy(props: RenderedHierarchyProps) {
+  const { hierarchy } = props;
+  const ref = useRef<HierarchyTreeHandle>(null);
+
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+      }}
+    >
+      <HierarchyTree
+        key={hierarchy.root.uri}
+        ref={ref}
+        hierarchy={hierarchy}
+        rootURI={hierarchy.root.uri}
+        itemURI={hierarchy.root.uri}
+        onSelectNode={node => {
+          node;
+        }}
+      />
+      <TermSearch
+        nodes={hierarchy.items()}
+        onSelectNode={node => {
+          ref.current?.openAndFocusNode(node.uri);
+        }}
+      />
+    </div>
+  );
+}
 
 async function main() {
   const loader = new OBOGraphLoader();
@@ -14,28 +51,7 @@ async function main() {
   root.render(
     <div>
       {[...hierarchies.values()].map(hierarchy => (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-          }}
-        >
-          <HierarchyTree
-            key={hierarchy.root.uri}
-            hierarchy={hierarchy}
-            rootURI={hierarchy.root.uri}
-            itemURI={hierarchy.root.uri}
-            onSelectNode={node => {
-              node;
-            }}
-          />
-          <TermSearch
-            nodes={hierarchy.items()}
-            onSelectNode={node => {
-              node;
-            }}
-          />
-        </div>
+        <RenderedHierarchy key={hierarchy.root.uri} hierarchy={hierarchy} />
       ))}
     </div>,
   );
