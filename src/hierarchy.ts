@@ -5,9 +5,16 @@ import Path from "./path";
 import Graph from "./graph";
 import { sortByLabel } from "./util";
 
-type FlatTreeOptions = {
-  showNodes?: Path[];
-  expandNodes?: Path[];
+type FlatViewOptions = {
+  showNodes?: Array<Path>;
+  expandNodes?: Array<Path>;
+};
+
+type HierarchyRow<T extends GraphNode> = {
+  item: T;
+  relToParent: string | null;
+  depth: number;
+  path: Path;
 };
 
 export default class Hierarchy<T extends GraphNode> {
@@ -63,51 +70,60 @@ export default class Hierarchy<T extends GraphNode> {
     });
   }
 
-  getItem(uri: string) {
-    const item = this.nodesByURI.get(uri);
+  getNode(node: string | T | Path) {
+    if (typeof node === "string") {
+      const ret = this.nodesByURI.get(node);
 
-    if (item === undefined) {
-      throw new Error(`No item in hierarchy with URI ${uri}`);
+      if (!ret) {
+        throw new Error(`No item in hierarchy with URI ${node}`);
+      }
+
+      return ret;
+    } else if (node instanceof Path) {
+      const ret = this.nodesByPathKey.get(node.key);
+
+      if (!ret) {
+        throw new Error(`No item in hierarchy at path ${node.key}`);
+      }
+
+      return ret;
+    } else {
+      return node;
     }
-    return item;
   }
 
   items() {
     return [...this.nodesByURI.values()].sort(sortByLabel);
   }
 
-  getPathsForNode(uri: string) {
-    return this.pathsByURI.get(uri) ?? [];
+  getPathsForNode(node: string | T) {
+    const _node = this.getNode(node);
+    return this.pathsByURI.get(_node.uri) ?? [];
   }
 
-  getItemAtPath(path: Path) {
-    const item = this.nodesByPathKey.get(path.key);
-    if (!item) throw new Error(`No such path: ${path.key}`);
-    return item;
-  }
-
-  buildFlatTree(opts: FlatTreeOptions = {}) {
+  // Produce a projection of this hierarchy, with only certain nodes shown or
+  // expanded. Meant for producing a portion of the hierarchy suitable for
+  // rendering in a UI.
+  //
+  // Returns a one-dimensional array of HierarchyRow objects annotated by their
+  // depth.
+  projectFlatView(opts: FlatViewOptions = {}) {
     const showNodes = opts.showNodes ?? [];
     const expandNodes = opts.expandNodes ?? [];
 
     const showKeys = new Set(showNodes.map(p => p.key));
     const expandKeys = new Set(expandNodes.map(p => p.key));
 
-    const rows: Array<{
-      item: T;
-      relToParent: string | null;
-      depth: number;
-      path: Path;
-    }> = [];
+    const rows: Array<HierarchyRow<T>> = [];
 
-    const shouldExpandPath = (path: Path) => {
-      // This node should be expanded
+    const shouldIterateChildren = (path: Path) => {
+      // This is an expanded node-- iterate its children.
       if (expandKeys.has(path.key)) return true;
 
-      // This node is an ancestor of a shown path
+      // This is an ancestor of a shown path-- iterate its children.
       if (showNodes.some(showPath => path.isAncestorOf(showPath))) return true;
 
-      // This node is an ancestor of an expanded path
+      // This node is an ancestor of an expanded path-- iterate its children.
       if (expandNodes.some(expandPath => path.isAncestorOf(expandPath)))
         return true;
 
@@ -135,7 +151,7 @@ export default class Hierarchy<T extends GraphNode> {
         // This is an ancestor of an expanded node
         if (path.isAncestorOf(expandPath)) return true;
 
-        // This is the direct child of an node to be expanded
+        // This is the direct child of an expanded node
         if (path.parent()?.equals(expandPath)) return true;
       }
 
@@ -147,8 +163,8 @@ export default class Hierarchy<T extends GraphNode> {
         item: this.root,
         path: new Path([this.root.uri]),
         depth: 0,
-        relToParent: null as null | string,
-      },
+        relToParent: null,
+      } as HierarchyRow<T>,
 
       visit(node) {
         const { item, path, depth, relToParent } = node;
@@ -161,7 +177,7 @@ export default class Hierarchy<T extends GraphNode> {
       getChildren: node => {
         const { item, path, depth } = node;
 
-        if (!shouldExpandPath(path)) {
+        if (!shouldIterateChildren(path)) {
           return [];
         }
 
@@ -178,10 +194,11 @@ export default class Hierarchy<T extends GraphNode> {
             path: path.child(item.uri),
             depth: depth + 1,
             relToParent: relPredicate,
-          };
+          } as HierarchyRow<T>;
         });
 
-        children.sort((a, b) => sortByLabel(a.item, b.item));
+        // Sort in reverse alphabetical order-- the last node is visited first.
+        children.sort((a, b) => sortByLabel(b.item, a.item));
 
         return children;
       },

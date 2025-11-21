@@ -45,23 +45,34 @@ const nodes: GraphNode[] = [
     synonyms: [],
     definitions: [],
   },
+
+  {
+    uri: "ex:E",
+    label: "E",
+    parents: {
+      "rdfs:subClassOf": ["ex:A", "ex:B"],
+    },
+    children: {},
+    synonyms: [],
+    definitions: [],
+  },
 ];
 
 describe("Graph", () => {
   test("load a graph containing a tree", () => {
     const g = new Graph(nodes);
 
-    const parents = g.findAllParents(nodes[3]!);
+    const parents = g.findAllParents(g.getItem("ex:D"));
     expect(parents.length).toBe(2);
-    expect(parents[0]).toBe(nodes[2]);
-    expect(parents[1]).toBe(nodes[0]);
+    expect(parents[0]).toBe(g.getItem("ex:C"));
+    expect(parents[1]).toBe(g.getItem("ex:A"));
 
-    const children = g.findAllChildren(nodes[0]!);
-    expect(children.length).toBe(3);
+    const children = g.findAllChildren(g.getItem("ex:A"));
+    expect(children.length).toBe(4);
 
-    expect(g.getItem("ex:A")).toBe(nodes[0]);
-
-    expect(g.roots, "should find root nodes").toMatchObject([nodes[0]]);
+    expect(g.roots, "should find root nodes").toMatchObject([
+      g.getItem("ex:A"),
+    ]);
   });
 });
 
@@ -76,6 +87,7 @@ describe("Hierarchy", () => {
       { uri: "ex:B" },
       { uri: "ex:C" },
       { uri: "ex:D" },
+      { uri: "ex:E" },
     ]);
 
     expect(g.getHierarchy("ex:C").items()).toMatchObject([
@@ -87,12 +99,12 @@ describe("Hierarchy", () => {
   test("build a flat tree", () => {
     const o = new Graph(nodes);
 
-    expect(o.getHierarchy("ex:A").buildFlatTree()).toMatchObject([
+    expect(o.getHierarchy("ex:A").projectFlatView()).toMatchObject([
       { item: { uri: "ex:A" }, relToParent: null, depth: 0 },
     ]);
 
     expect(
-      o.getHierarchy("ex:A").buildFlatTree({
+      o.getHierarchy("ex:A").projectFlatView({
         showNodes: [new Path(["ex:A", "ex:C", "ex:D"])],
       }),
     ).toMatchObject([
@@ -105,7 +117,7 @@ describe("Hierarchy", () => {
   test("build a flat tree with one level manually expanded", () => {
     const o = new Graph(nodes);
 
-    const tree = o.getHierarchy("ex:A").buildFlatTree({
+    const tree = o.getHierarchy("ex:A").projectFlatView({
       expandNodes: [new Path(["ex:A"])],
       showNodes: [new Path(["ex:A", "ex:C", "ex:D"])],
     });
@@ -131,6 +143,23 @@ describe("Hierarchy", () => {
         relToParent: "rdfs:subClassOf",
         depth: 2,
       },
+      {
+        item: { uri: "ex:E" },
+        relToParent: "rdfs:subClassOf",
+        depth: 1,
+      },
+    ]);
+  });
+
+  test("get all paths to a node in a hierarchy", () => {
+    const o = new Graph(nodes);
+    const tree = o.getHierarchy("ex:A");
+    expect(tree.getPathsForNode("ex:D")).toMatchObject([
+      new Path(["ex:A", "ex:C", "ex:D"]),
+    ]);
+    expect(tree.getPathsForNode("ex:E")).toMatchObject([
+      new Path(["ex:A", "ex:E"]),
+      new Path(["ex:A", "ex:B", "ex:E"]),
     ]);
   });
 });

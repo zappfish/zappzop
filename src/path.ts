@@ -17,6 +17,10 @@ export default class Path {
     return this.steps.length;
   }
 
+  startsWith(other: Path) {
+    return other.isAncestorOf(this) || other.equals(this);
+  }
+
   isAncestorOf(other: Path) {
     if (this.steps.length >= other.steps.length) return false;
     return this.steps.every((val, i) => val === other.steps[i]);

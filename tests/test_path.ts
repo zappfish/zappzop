@@ -13,5 +13,6 @@ describe("Path", () => {
 
     expect(p.isAncestorOf(new Path(["A", "B", "C"]))).toEqual(true);
     expect(p.isAncestorOf(new Path(["A"]))).toEqual(false);
+    expect(p.startsWith(new Path(["A"]))).toEqual(true);
   });
 });
