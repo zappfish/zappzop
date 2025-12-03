@@ -1,7 +1,7 @@
 {
-  "name": "FROGPOT",
+  "name": "frogpot",
   "version": "1.0.0",
-  "description": "A React component to render trees from graphs.",
+  "description": "A library to work with directed graphs that can be projected into trees.",
   "keywords": [
     "obo",
     "react",
