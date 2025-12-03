@@ -1,4 +1,5 @@
-import Graph, { GraphNode } from "../graph";
+import Graph from "../graph";
+import { GraphNode } from "../types";
 
 export default abstract class GraphLoader<T, U extends GraphNode> {
   abstract parseGraph(graph: T): Graph<U>;
