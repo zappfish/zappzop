@@ -180,18 +180,19 @@ function HierarchyTree<T extends GraphNode = GraphNode>(
         const parents = paths.map(p => p.parent()).filter(p => p !== null);
 
         setTreeState(prev => {
-          const expandPaths = new Set([...prev.expandPaths, ...parents.map(p => p.key)]);
+          const expandPaths = new Set([
+            ...prev.expandPaths,
+            ...parents.map(p => p.key),
+          ]);
           const showPaths = new Set([...paths.map(path => path.key)]);
           const selectedPath = paths[0]!;
-
-          console.log(selectedPath)
 
           return {
             expandPaths,
             showPaths,
             selectedPath,
-          }
-        })
+          };
+        });
       },
     }),
     [],
@@ -214,7 +215,7 @@ function HierarchyTree<T extends GraphNode = GraphNode>(
     setTreeState(prev => ({
       ...prev,
       expandPaths: new Set([...prev.expandPaths, pathKey]),
-    }))
+    }));
   };
 
   const unexpandPath = (pathKey: string) => {
@@ -231,7 +232,10 @@ function HierarchyTree<T extends GraphNode = GraphNode>(
 
       let nextSelectedPath = treeState.selectedPath;
 
-      if (treeState.selectedPath.startsWith(path) && !treeState.selectedPath.equals(path)) {
+      if (
+        treeState.selectedPath.startsWith(path) &&
+        !treeState.selectedPath.equals(path)
+      ) {
         nextSelectedPath = path;
       }
 
@@ -239,8 +243,8 @@ function HierarchyTree<T extends GraphNode = GraphNode>(
         selectedPath: nextSelectedPath,
         showPaths: new Set(nextShowPaths),
         expandPaths: new Set(nextExpandPaths),
-      }
-    })
+      };
+    });
   };
 
   const togglePathExpansion = (path: string) => {
@@ -255,7 +259,9 @@ function HierarchyTree<T extends GraphNode = GraphNode>(
     <div
       tabIndex={0}
       onKeyDown={e => {
-        const curIdx = tree.findIndex(({ path }) => path.equals(treeState.selectedPath));
+        const curIdx = tree.findIndex(({ path }) =>
+          path.equals(treeState.selectedPath),
+        );
         const curItem = tree[curIdx];
 
         if (e.key === "ArrowDown") {
@@ -267,7 +273,7 @@ function HierarchyTree<T extends GraphNode = GraphNode>(
               setTreeState(prev => ({
                 ...prev,
                 selectedPath: nextItem.path,
-              }))
+              }));
             }
           }
         } else if (e.key === "ArrowUp") {
@@ -279,7 +285,7 @@ function HierarchyTree<T extends GraphNode = GraphNode>(
               setTreeState(prev => ({
                 ...prev,
                 selectedPath: nextItem.path,
-              }))
+              }));
             }
           }
         } else if (e.key === "ArrowRight") {
@@ -299,7 +305,7 @@ function HierarchyTree<T extends GraphNode = GraphNode>(
                   setTreeState(prev => ({
                     ...prev,
                     selectedPath: tree[i]!.path,
-                  }))
+                  }));
                   break;
                 }
               }
@@ -357,7 +363,9 @@ function HierarchyTree<T extends GraphNode = GraphNode>(
                       width: 10,
                       height: 10,
                       border: "2px solid #666",
-                      background: treeState.expandPaths.has(path.key) ? "#ccc" : "#fff",
+                      background: treeState.expandPaths.has(path.key)
+                        ? "#ccc"
+                        : "#fff",
                       alignItems: "center",
                       justifyContent: "center",
                     }}
@@ -385,7 +393,7 @@ function HierarchyTree<T extends GraphNode = GraphNode>(
                     setTreeState(prev => ({
                       ...prev,
                       selectedPath: path,
-                    }))
+                    }));
                   } else if (e.detail === 2) {
                     // Double click: Expand hierarchy
                     togglePathExpansion(path.key);

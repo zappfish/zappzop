@@ -9,12 +9,9 @@ type TermSearchProps<T extends GraphNode = GraphNode> = {
 export default function TermSearch<T extends GraphNode = GraphNode>(
   props: TermSearchProps<T>,
 ) {
-  const {
-    query,
-    setQuery,
-    results,
-    highlightText,
-  } = useNodeSearch(props.nodes);
+  const { query, setQuery, results, highlightText } = useNodeSearch(
+    props.nodes,
+  );
 
   return (
     <div>
@@ -41,18 +38,12 @@ export default function TermSearch<T extends GraphNode = GraphNode>(
               }
             }}
           >
-            { highlightText(result.node.label || "") }
-            {" "}
-            - {result.score}
+            {highlightText(result.node.label || "")} - {result.score}
             {result.node.synonyms.map(syn => (
-              <div>
-                { highlightText(syn.value || "") }
-              </div>
+              <div>{highlightText(syn.value || "")}</div>
             ))}
             {result.node.definitions.map(def => (
-              <div>
-                { highlightText(def.value || "") }
-              </div>
+              <div>{highlightText(def.value || "")}</div>
             ))}
             <hr />
           </div>
