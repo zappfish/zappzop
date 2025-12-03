@@ -1,12 +1,13 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, createElement } from "react";
 import MiniSearch, { SearchOptions, SearchResult } from "minisearch";
-import { GraphNode } from "./graph";
+import { GraphNode } from "./types";
+import Highlighter, { HighlighterProps } from "react-highlight-words";
 
 export type SearchResultWithNode<T extends GraphNode> = SearchResult & {
   node: T;
 };
 
-export default class SearchEngine<T extends GraphNode> {
+export class SearchEngine<T extends GraphNode> {
   items: Array<T>;
   itemsByURI: Map<string, T>;
   miniSearch: MiniSearch;
@@ -21,6 +22,7 @@ export default class SearchEngine<T extends GraphNode> {
       fields: ["label", "synonyms", "definitions"],
       extractField: (doc, fieldName) => {
         if (fieldName === "synonyms" || fieldName === "definitions") {
+          // @ts-expect-error Don't worry about cajoling this into types.
           return doc[fieldName].map(x => x.value).join(" ");
         }
 
@@ -64,4 +66,41 @@ export function useSearchEngine<T extends GraphNode>(items: Array<T>) {
   }, [items]);
 
   return { engine: engineRef.current! };
+}
+
+export function useNodeSearch<T extends GraphNode>(nodes: Array<T>) {
+  const { engine } = useSearchEngine(nodes);
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<Array<SearchResultWithNode<T>> | null>(
+    null,
+  );
+
+  useEffect(() => {
+    if (query.trim() === "") {
+      setResults(null);
+      return;
+    }
+
+    const results = engine.search(query, {
+      prefix: true,
+      boost: { label: 2 },
+      combineWith: "and",
+    });
+
+    setResults(results);
+  }, [query]);
+
+  const searchWords = query.split(" ").map(word => new RegExp("\\b" + word));
+
+  const highlightText = (
+    text: string,
+    props?: Omit<HighlighterProps, "searchWords" | "textToHighlight">,
+  ) =>
+    createElement(Highlighter, {
+      textToHighlight: text,
+      searchWords,
+      ...props,
+    });
+
+  return { engine, results, query, setQuery, highlightText };
 }

@@ -1,7 +1,5 @@
-import { useState, useEffect } from "react";
-import { useSearchEngine, SearchResultWithNode } from "../search";
-import { GraphNode } from "../graph";
-import Highlighter from "react-highlight-words";
+import { useNodeSearch } from "../search";
+import { GraphNode } from "../types";
 
 type TermSearchProps<T extends GraphNode = GraphNode> = {
   nodes: Array<T>;
@@ -11,34 +9,21 @@ type TermSearchProps<T extends GraphNode = GraphNode> = {
 export default function TermSearch<T extends GraphNode = GraphNode>(
   props: TermSearchProps<T>,
 ) {
-  const [results, setResults] = useState<Array<SearchResultWithNode<T>> | null>(
-    null,
-  );
-  const [searchText, setSearchText] = useState("");
-  const { engine } = useSearchEngine(props.nodes);
-
-  useEffect(() => {
-    const results = engine.search(searchText, {
-      prefix: true,
-      boost: { label: 2 },
-      combineWith: "and",
-    });
-
-    setResults(results.slice(0, 50));
-  }, [searchText]);
-
-  const highlightStrings = searchText
-    .split(" ")
-    .map(word => new RegExp("\\b" + word));
+  const {
+    query,
+    setQuery,
+    results,
+    highlightText,
+  } = useNodeSearch(props.nodes);
 
   return (
     <div>
       <div>
         <input
           type="text"
-          value={searchText}
+          value={query}
           onChange={e => {
-            setSearchText(e.target.value);
+            setQuery(e.target.value);
           }}
         />
       </div>
@@ -56,25 +41,17 @@ export default function TermSearch<T extends GraphNode = GraphNode>(
               }
             }}
           >
-            <Highlighter
-              textToHighlight={result.node.label || ""}
-              searchWords={highlightStrings}
-            />{" "}
+            { highlightText(result.node.label || "") }
+            {" "}
             - {result.score}
             {result.node.synonyms.map(syn => (
               <div>
-                <Highlighter
-                  textToHighlight={syn.value}
-                  searchWords={highlightStrings}
-                />
+                { highlightText(syn.value || "") }
               </div>
             ))}
             {result.node.definitions.map(def => (
               <div>
-                <Highlighter
-                  textToHighlight={def.value}
-                  searchWords={highlightStrings}
-                />
+                { highlightText(def.value || "") }
               </div>
             ))}
             <hr />
